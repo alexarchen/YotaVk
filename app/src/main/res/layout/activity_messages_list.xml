@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+    <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    tools:context="com.zakharchenko.yotavk.MessagesList"
+    android:background="#f3f8f9">
+
+        <LinearLayout
+            android:orientation="horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="#437cbe">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:id="@+id/Header"
+                android:textSize="20dp"
+                android:layout_weight="1"
+                android:textColor="@color/primary_text_default_material_dark"
+                android:padding="5dp" />
+
+            <ImageView
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:id="@+id/Wait"
+                android:src="@anim/ic_spin_animation_white"
+                android:layout_gravity="right" />
+        </LinearLayout>
+
+        <ListView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:id="@+id/listViewConv"
+            android:divider="#dfdfdf"
+            android:dividerHeight="0px"
+            android:scrollingCache="true"
+            android:smoothScrollbar="true"
+            android:focusable="true"
+            android:layout_gravity="top"
+            android:layout_weight="1"
+            android:padding="10dp"
+            android:stackFromBottom="true"
+            android:transcriptMode="normal" />
+
+        <LinearLayout
+            android:orientation="horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom"
+            android:layout_marginLeft="10dp"
+            android:layout_marginRight="10dp"
+            android:focusableInTouchMode="true"
+            android:focusable="true">
+
+            <EditText
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:id="@+id/Message"
+                android:layout_marginLeft="5dp"
+                android:layout_weight="1"
+                android:inputType="textCapSentences|textMultiLine"
+                android:hint="@string/write_message"
+                android:focusableInTouchMode="true"
+                android:enabled="true"
+                android:focusable="true"
+                android:background="@color/bright_foreground_material_dark"
+                android:textSize="16dp"
+                android:padding="8dp"
+                android:layout_gravity="center_vertical"
+                android:textColor="@color/primary_text_default_material_light" />
+
+
+            <ImageView
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                android:id="@+id/Send"
+                android:src="@drawable/send_grey"
+                android:clickable="true" />
+        </LinearLayout>
+
+ </LinearLayout>

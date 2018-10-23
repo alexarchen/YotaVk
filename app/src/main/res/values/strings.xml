@@ -1,0 +1,74 @@
+<resources>
+    <string name="app_name" translatable="false">YoVK Messenger</string>
+    <string name="action_settings">Settings</string>
+    <integer name="com_vk_sdk_AppId">5357883</integer>
+    <string name="title_activity_messages_list" translatable="false">MessagesList</string>
+    <string name="title_activity_chats_list" translatable="false">ChatsList</string>
+    <string name="createchat">Create Chat</string>
+    <string name="selectchat">Select chat participants from the list</string>
+    <string name="namechat">Enter chat name</string>
+    <string name="refresh">Refresh</string>
+    <string name="settings">Settings</string>
+    <string name="nomessages">No messages</string>
+    <string name="newmsgs1">1 message</string>
+    <string name="newmsgs2">%1$d msgs</string>
+    <string name="newmsgs5">%1$d msgs</string>
+    <string name="newmessages1">1 message</string>
+    <string name="newmessages2">%1$d messages</string>
+    <string name="newmessages5">%1$d messages</string>
+    <string name="show_headsup">Show heads-up notification</string>
+    <string name="notif_sound">Sound notification</string>
+    <string name="notif_vibrate">Vibrate notification</string>
+    <string name="chat"> in 1 chat</string>
+    <string name="chats"> in %1$d chats</string>
+    <string name="notlogged">Not logged in VK</string>
+    <string name="serv_name" translatable="false">YoVK Service</string>
+    <string name="runvk">VKontakte</string>
+    <string name="title_activity_settings">Settings</string>
+
+    <string name="settings_notif_time">E-ink Notifications</string>
+
+    <string-array name="notif_time">
+        <item>Don\'t show</item>
+        <item>5 sec</item>
+        <item>10 sec</item>
+        <item>30 sec</item>
+        <item>1 min</item>
+        <item>2 min</item>
+        <item>5 min</item>
+    </string-array>
+    <string-array name="notif_time_values" translatable="false">
+        <item>0</item>
+        <item>5</item>
+        <item>10</item>
+        <item>30</item>
+        <item>60</item>
+        <item>120</item>
+        <item>300</item>
+    </string-array>
+    <string name="turn_screen_front">Rotate phone to front screen…</string>
+    <string name="messages_bigtext">Messages:</string>
+    <string name="post_notif">System notifications</string>
+    <string name="post_notif_summ">Main screen notifications about new messages (required for YoMessage)</string>
+    <string name="use_VK">Open in VKontakte</string>
+    <string name="use_VK_summ">Open notification in official VKontakte</string>
+    <string name="firtstime">Thank you for using YotaVK Messenger!\n\nIn order to use all it\'s functionallity notifications are alredy turned on in settings. Now you have to turn off notifications about messages in VK settings.</string>
+    <string name="settings_notif_time_summ">Second screen notifications time</string>
+    <string name="chats_title">VK Messages</string>
+    <string name="keep_notif">Keep notification</string>
+    <string name="keep_notif_summ">Keep notification until not read messages exist</string>
+    <string name="mainscreen">To main screen</string>
+    <string name="open_page">Open YoVK page</string>
+    <string name="login_doing">Logging in VK is performing...</string>
+    <string name="error_login">Logging error:</string>
+    <string name="show_headsup_summ">Show income message in popup window at the top</string>
+    <string name="eink_notif">Second screen</string>
+    <string name="first_screen">Main screen</string>
+    <string name="settings_other">Others</string>
+    <string name="show_time"><![CDATA[Show time & battery]]></string>
+    <string name="show_time_summ"><![CDATA[Show time & battery status in the header on the second screen]]></string>
+    <string name="wall">Wall post</string>
+    <string name="err_notlogged">You are not logged into VK. Run application from main screen and log into VK</string>
+    <string name="write_message">Enter text here...</string>
+
+</resources>

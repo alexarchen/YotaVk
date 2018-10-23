@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical" android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:padding="10dp"
+    android:id="@+id/Whole"
+    android:gravity="top">
+
+    <LinearLayout
+        android:orientation="horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <LinearLayout
+            android:orientation="vertical"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content">
+
+            <ImageView
+                android:layout_width="80px"
+                android:layout_height="80px"
+                android:id="@+id/imageView5"
+                android:src="@drawable/yotavk" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="00:00"
+                android:id="@+id/Time"
+                android:textSize="30px"
+                android:textColor="#eee" />
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:id="@+id/Header"
+            android:textSize="25dp"
+            android:textAlignment="center"
+            android:textColor="#ffffff" />
+    </LinearLayout>
+
+    <TextView
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/Text"
+        android:textSize="23dp"
+        android:textColor="#ffffff"
+        android:layout_weight="1"
+        android:linksClickable="false"
+        android:scrollbars="none"
+        android:maxLines="6"
+        android:gravity="bottom"
+        android:textAlignment="gravity"
+        android:elegantTextHeight="false" />
+
+</LinearLayout>

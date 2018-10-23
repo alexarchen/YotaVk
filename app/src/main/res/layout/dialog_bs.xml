@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="horizontal" android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:paddingLeft="5dp"
+    android:paddingRight="5dp">
+
+    <ImageView
+        android:layout_width="70dp"
+        android:layout_height="70dp"
+        android:id="@+id/imageView"
+        android:padding="5dp"
+        android:src="@drawable/user"
+        android:layout_gravity="center_vertical" />
+
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="10dp"
+        android:layout_weight="1"
+        android:layout_gravity="center_vertical">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="New Text"
+            android:id="@+id/Header"
+            android:textSize="20dp"
+            android:textColor="#000"
+            android:textStyle="bold"
+            android:ellipsize="end" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="?android:attr/textAppearanceSmall"
+            android:text="Small Text"
+            android:id="@+id/Text"
+            android:textColor="@android:color/primary_text_light"
+            android:textSize="18dp"
+            android:maxLines="2" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical|right"
+        android:layout_gravity="center_vertical">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="New Text"
+            android:id="@+id/Time"
+            android:gravity="right"
+            android:layout_gravity="center_vertical"
+            android:textColor="#565656" />
+
+        <TextView
+            android:layout_width="25dp"
+            android:layout_height="25dp"
+            android:text="99"
+            android:id="@+id/Unread"
+            android:background="@drawable/round"
+            android:textColor="#fff"
+            android:layout_gravity="center_horizontal"
+            android:textAlignment="center"
+            android:textStyle="bold"
+            android:textIsSelectable="false"
+            android:textSize="16dp"
+            android:paddingLeft="-10dp"
+            android:paddingRight="-10dp"
+            android:paddingTop="2dp" />
+    </LinearLayout>
+
+</LinearLayout>

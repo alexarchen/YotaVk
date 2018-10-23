@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_height="wrap_content"
+    android:layout_width="wrap_content">
+    <item android:id="@+id/menu_createchat"
+        android:title="@string/createchat" />
+    <item android:id="@+id/menu_refresh"
+        android:title="@string/refresh" />
+    <item android:id="@+id/menu_settings"
+    android:title="@string/settings" />
+    <item android:id="@+id/menu_runvk"
+        android:title="@string/runvk"/>
+
+</menu>

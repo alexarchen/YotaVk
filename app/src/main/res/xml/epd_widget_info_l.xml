@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<epd-widget-provider
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:sdk="http://schemas.android.com/apk/com.yotadevices.sdk"
+    sdk:size="large|extra_large"
+    sdk:category="Communication"
+    sdk:invertable="large|extra_large"/>

@@ -1,0 +1,88 @@
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <PreferenceCategory
+        android:title="@string/eink_notif"
+>
+    <ListPreference
+        android:defaultValue="10"
+        android:entries="@array/notif_time"
+        android:entryValues="@array/notif_time_values"
+        android:key="notif_time"
+        android:negativeButtonText="@null"
+        android:positiveButtonText="@null"
+        android:persistent="true"
+        android:title="@string/settings_notif_time"
+        android:summary="@string/settings_notif_time"
+        />
+    </PreferenceCategory>
+    <PreferenceCategory
+        android:title="@string/first_screen">
+    <SwitchPreference
+        android:key="post_notif"
+        android:title="@string/post_notif"
+        android:persistent="true"
+        android:summary="@string/post_notif_summ"
+        android:defaultValue="true"
+        />
+
+
+    <SwitchPreference
+        android:dependency="post_notif"
+        android:key="use_VK"
+        android:title="@string/use_VK"
+        android:persistent="true"
+        android:summary="@string/use_VK_summ"
+        android:defaultValue="false"
+        />
+
+    <SwitchPreference
+        android:dependency="post_notif"
+        android:key="show_headsup"
+        android:defaultValue="true"
+        android:title="@string/show_headsup"
+        android:persistent="true"
+        android:summary="@string/show_headsup_summ"
+        />
+
+    <SwitchPreference
+        android:dependency="post_notif"
+        android:key="notif_sound"
+        android:defaultValue="true"
+        android:title="@string/notif_sound"
+        android:persistent="true"
+        />
+
+    <SwitchPreference
+        android:dependency="post_notif"
+        android:key="notif_vibrate"
+        android:defaultValue="true"
+        android:title="@string/notif_vibrate"
+        android:persistent="true"
+        />
+
+    <SwitchPreference
+        android:defaultValue="true"
+        android:dependency="post_notif"
+        android:persistent="true"
+        android:key="keep_notif"
+        android:title="@string/keep_notif"
+        android:summary="@string/keep_notif_summ"/>
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        android:title="@string/settings_other">
+
+        <SwitchPreference
+            android:defaultValue="true"
+            android:persistent="true"
+            android:key="show_time"
+            android:title="@string/show_time"
+            android:summary="@string/show_time_summ"/>
+
+    <Preference android:title="@string/open_page">
+        <intent android:action="android.intent.action.VIEW" android:data="http://play.google.com/store/apps/details?id=com.zakharchenko.yovk"/>
+    </Preference>
+
+    </PreferenceCategory>
+
+</PreferenceScreen>

@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="chat">в 1 чате</string>
+    <string name="chats">в %d чатах</string>
+    <string name="createchat">Создать чат</string>
+    <string name="namechat">Введите название чата</string>
+    <string name="newmessages1">1 сообщение</string>
+    <string name="newmessages2">%1$d сообщения</string>
+    <string name="newmessages5">%1$d сообщений</string>
+    <string name="nomessages">Нет сообщений</string>
+    <string name="notlogged">Войти в ВКонтакте</string>
+    <string name="refresh">Обновить</string>
+    <string name="selectchat">Выберите участников чата из списка</string>
+    <string name="settings">Настройки</string>
+    <string name="action_settings">Настройки</string>
+    <string name="runvk">ВКонтакте</string>
+    <string name="settings_notif_time">Уведомления E-ink</string>
+    <string name="title_activity_settings">Настройки</string>
+    <string name="turn_screen_front">Переверните телефон на главный экран…</string>
+    <string name="messages_bigtext">Сообщения:</string>
+    <string name="newmsgs1">1 сообщ.</string>
+    <string name="newmsgs2">%d сообщ.</string>
+    <string name="newmsgs5">%d сообщ.</string>
+    <string name="post_notif">Системные уведомления</string>
+    <string name="post_notif_summ">Уведомления на основном экране о новых сообщениях (требуется для YoMessage)</string>
+    <string name="use_VK">Открывать ВКонтакте</string>
+    <string name="use_VK_summ">Открывать системные уведомления в официальном приложении ВКонтакте</string>
+    <string name="notif_sound">Звук уведомления</string>
+    <string name="notif_vibrate">Вибрация</string>
+    <string name="show_headsup">Всплывающее уведомление</string>
+
+    <string-array name="notif_time">
+        <item>Не показывать</item>
+        <item>5 сек</item>
+        <item>10 сек</item>
+        <item>30 сек</item>
+        <item>1 мин</item>
+        <item>2 мин</item>
+        <item>5 мин</item>
+    </string-array>
+    <string name="firtstime">Спасибо за установку YoVK Messenger!\n\nДля использования всего функционала приложения системные уведомления о входящих сообщениях уже включены в настройках. Если у вас установлен ВК в его настройках необходимо отключить уведомления о сообщениях (личных и в беседах).\n\nПриятной работы.</string>
+    <string name="settings_notif_time_summ">Длительность уведомлений на втором экране</string>
+    <string name="chats_title">Сообщения ВК</string>
+    <string name="keep_notif">Удерживать уведомление</string>
+    <string name="keep_notif_summ">Удерживать системное уведомление пока все сообщения не будут прочитаны</string>
+    <string name="mainscreen">Главный экран</string>
+    <string name="open_page">Открыть страницу YoVK</string>
+    <string name="login_doing">Осуществляется вход в ВК</string>
+    <string name="error_login">Ошибка входа: </string>
+    <string name="show_headsup_summ">Показывать пришедшее сообщение во всплывающем окне сверху</string>
+    <string name="eink_notif">Второй экрана</string>
+    <string name="first_screen">Главный экран</string>
+    <string name="settings_other">Другие</string>
+    <string name="show_time">Показывать время и заряд</string>
+    <string name="show_time_summ">Показывать время и статус батареи в заголовке на втором экране</string>
+    <string name="wall">Запись на стене</string>
+    <string name="err_notlogged">Вы не вошли в ВК. Запустите приложение с главного экрана и войдите в ВК.</string>
+    <string name="write_message">Введите текст</string>
+
+</resources>
