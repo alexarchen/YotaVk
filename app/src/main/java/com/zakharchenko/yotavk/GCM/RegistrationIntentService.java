@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.zakharchenko.yotavk;
+package com.zakharchenko.yotavk.GCM;
 
 import android.app.IntentService;
 import android.content.Intent;
@@ -32,6 +32,7 @@ import com.vk.sdk.api.VKError;
 import com.vk.sdk.api.VKParameters;
 import com.vk.sdk.api.VKRequest;
 import com.vk.sdk.api.VKResponse;
+import com.zakharchenko.yotavk.R;
 
 import java.io.IOException;
 

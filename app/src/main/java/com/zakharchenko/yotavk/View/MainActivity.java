@@ -1,5 +1,6 @@
-package com.zakharchenko.yotavk;
+package com.zakharchenko.yotavk.View;
 
+import android.Manifest;
 import android.app.Activity;
 import android.app.NotificationManager;
 import android.content.BroadcastReceiver;
@@ -8,11 +9,15 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.preference.PreferenceManager;
+import android.provider.Settings;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 import android.view.View;
@@ -29,11 +34,19 @@ import com.vk.sdk.api.VKError;
 import com.vk.sdk.api.methods.VKApiBase;
 import com.vk.sdk.util.VKUtil;
 import com.yotadevices.sdk.EpdIntentCompat;
+import com.zakharchenko.yotavk.BuildConfig;
+import com.zakharchenko.yotavk.Data.VKData;
+import com.zakharchenko.yotavk.GCM.RegistrationIntentService;
+import com.zakharchenko.yotavk.MyApplication;
+import com.zakharchenko.yotavk.Presenter.MainPresenter;
+import com.zakharchenko.yotavk.Presenter.Presenter;
+import com.zakharchenko.yotavk.R;
+import com.zakharchenko.yotavk.Utils.Utils;
 
 
 // Login activity
 
-public class MainActivity extends Activity {
+public class MainActivity extends Activity implements Presenter.Listener{
 
     private static final int PLAY_SERVICES_RESOLUTION_REQUEST = 9000;
     private static final String TAG = "MainActivity";
@@ -43,6 +56,7 @@ public class MainActivity extends Activity {
     private TextView mInformationTextView;
     private boolean isReceiverRegistered;
 
+    MainPresenter presenter;
     // VK present
     boolean isVK(){
 
@@ -57,11 +71,53 @@ public class MainActivity extends Activity {
     }
 
     @Override
+    public void onChanged() {
+
+    }
+
+    @Override
+    public void showLoaded(boolean bLoaded) {
+
+    }
+
+    void CheckAccess(){
+
+        if ((Settings.Secure.getString(this.getContentResolver(), "enabled_notification_listeners")==null) || (Settings.Secure.getString(this.getContentResolver(), "enabled_notification_listeners").contains(getApplicationContext().getPackageName())))
+        {
+            //service is enabled do something
+        } else {
+            Intent intent = new Intent("android.settings.ACTION_NOTIFICATION_LISTENER_SETTINGS");
+            startActivity(intent);
+        }
+
+        if (Build.VERSION.SDK_INT>=23) {
+
+
+            if ((ContextCompat.checkSelfPermission(this,
+                            Manifest.permission.RECEIVE_BOOT_COMPLETED)
+                            != PackageManager.PERMISSION_GRANTED))
+
+            {
+                     ActivityCompat.requestPermissions(
+                        this, // Activity
+                        new String[]{
+                                Manifest.permission.RECEIVE_BOOT_COMPLETED,
+                        },
+                        111);
+
+            }
+        }
+
+    }
+
+
+    @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
         Log.i(TAG, "MainActivity start");
 
+        CheckAccess();
 
 
         mRegistrationBroadcastReceiver = new BroadcastReceiver() {
@@ -96,16 +152,16 @@ public class MainActivity extends Activity {
 
         //PreferenceManager.getDefaultSharedPreferences(this).edit().putString("notif_time","10").commit();
 
-        if (checkPlayServices()) {
+        if ((!BuildConfig.FLAVOR.equals("mock")) && (checkPlayServices())) {
             // Start IntentService to register this application with GCM.
             Log.d(TAG,"Start registration");
-            Intent intent = new Intent(this, RegistrationIntentService.class);
+            Intent intent = new Intent(this,RegistrationIntentService.class);
             startService(intent);
         }
         else Log.d(TAG, "Play serice is not available");
 
 
-        if (!VKSdk.isLoggedIn())
+        if ((!BuildConfig.FLAVOR.equals("mock")) && (!VKSdk.isLoggedIn()))
         {
 
             VKSdk.login(this, "messages,notifications,stats,friends,notify");
@@ -118,15 +174,7 @@ public class MainActivity extends Activity {
 
             startService(new Intent(getApplicationContext(), BSWidget.WidgetService.class));
 
-/*           new Handler().postDelayed(new Runnable() {
-                                          @Override
-                                          public void run() {
-                                              startService(new Intent(getApplicationContext(), BSNotifActivity.class));
-                                          }
-                                      },1000);
-*/
-
-           if (!PreferenceManager.getDefaultSharedPreferences(MainActivity.this).getBoolean("firsttime",true)) {
+            if (!PreferenceManager.getDefaultSharedPreferences(MainActivity.this).getBoolean("firsttime",true)) {
 
                new Handler().postDelayed(new Runnable() {
                    @Override
@@ -157,10 +205,14 @@ public class MainActivity extends Activity {
 
 
                            } else {
-                               if (Build.VERSION.SDK_INT>=23)
+                               if (!Utils.isYotaphoneSDK2())
                                  startActivity(new Intent(MainActivity.this, ChatsList.class));
-                               else
-                                   startService(new Intent(MainActivity.this, BSChatsList.class));
+                               else {
+                                   try {
+                                     //TODO: SDK2  startService(new Intent(MainActivity.this, BSChatsList.class));
+                                   }
+                                   catch ( Exception e){}
+                               }
                            }
                        } else
                            startActivity(new Intent(MainActivity.this, ChatsList.class));
@@ -175,6 +227,7 @@ public class MainActivity extends Activity {
 
         }
 
+        presenter = new MainPresenter(this,MyApplication.dataProvider);
 
     }
 
@@ -185,20 +238,18 @@ public class MainActivity extends Activity {
 
             @Override
             public void onResult(VKAccessToken res) {
-// Пользователь успешно авторизовался
+                // Пользователь успешно авторизовался
                 MyApplication app = ((MyApplication) getApplication());
                 app.vkAccessToken = res;
 
-                MyApplication.GetMessages(app.defListener);
-                MyApplication.GetFriends(app.defListener);
 
                 if (!PreferenceManager.getDefaultSharedPreferences(MainActivity.this).getBoolean("firsttime", true)) {
 
                     if (getIntent().getAction().equals(Intent.ACTION_VIEW)){
-                        if (MyApplication.isYotaphoneSDK2())
-                            startService(new Intent(MainActivity.this, BSChatsList.class));
-                        else
-                        if (MyApplication.isClass("EpdIntentCompat")) {
+                        //TODO: SDK2 if (MyApplication.isYotaphoneSDK2())
+                        //    startService(new Intent(MainActivity.this, BSChatsList.class));
+                        //else
+                        if (Utils.isYotaphoneSDK3()) {
                             Intent intent = new Intent(MainActivity.this, ChatsList.class);
                             EpdIntentCompat.setEpdFlags(intent, EpdIntentCompat.FLAG_ACTIVITY_KEEP_ON_EPD_SCREEN);
                             startActivity(intent);
@@ -248,10 +299,10 @@ public class MainActivity extends Activity {
     public void onClick(View v){
 
         if (getIntent().getAction().equals(Intent.ACTION_VIEW)){
-           if (MyApplication.isYotaphoneSDK2())
-             startService(new Intent(MainActivity.this, BSChatsList.class));
-           else
-            if (MyApplication.isClass("EpdIntentCompat")) {
+           //TODO: SDK2 if (MyApplication.isYotaphoneSDK2())
+           //  startService(new Intent(MainActivity.this, BSChatsList.class));
+           //else
+            if (Utils.isYotaphoneSDK3()) {
                 Intent intent = new Intent(MainActivity.this, ChatsList.class);
                 EpdIntentCompat.setEpdFlags(intent, EpdIntentCompat.FLAG_ACTIVITY_KEEP_ON_EPD_SCREEN);
                 startActivity(intent);

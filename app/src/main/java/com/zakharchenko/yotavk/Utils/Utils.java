@@ -1,4 +1,4 @@
-package com.zakharchenko.yotavk;
+package com.zakharchenko.yotavk.Utils;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -23,7 +23,34 @@ import android.graphics.PorterDuffXfermode;
 import android.graphics.Rect;
 import android.graphics.RectF;
 
-public class ImageUtil {
+public class Utils {
+
+
+	// Utility function
+	public static boolean isClass(String className) {
+
+		try  {
+			if (Class.forName(className)!=null)
+				return true;
+		}  catch (Exception e) {
+		}
+		return false;
+	}
+	// Check if running under YotaPhone 2
+	public static boolean isYotaphoneSDK2(){
+
+		return (isClass("com.yotadevices.sdk.BSActivity"));
+	}
+
+	public static boolean isYotaphoneSDK3(){
+
+		return (isClass("com.yotadevices.sdk.EpdIntentCompat"));
+
+	}
+
+	public static boolean isYotaphoneSDK(){
+		return ((isYotaphoneSDK2()) || (isYotaphoneSDK3()));
+	}
 
 	public static void processRoundedCornerBitmap(String bitmapFile, int pixels) {
 		Bitmap bitmap = BitmapFactory.decodeFile(bitmapFile);

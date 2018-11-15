@@ -49,7 +49,7 @@
     <string name="turn_screen_front">Rotate phone to front screen…</string>
     <string name="messages_bigtext">Messages:</string>
     <string name="post_notif">System notifications</string>
-    <string name="post_notif_summ">Main screen notifications about new messages (required for YoMessage)</string>
+    <string name="post_notif_summ">System notifications about new messages</string>
     <string name="use_VK">Open in VKontakte</string>
     <string name="use_VK_summ">Open notification in official VKontakte</string>
     <string name="firtstime">Thank you for using YotaVK Messenger!\n\nIn order to use all it\'s functionallity notifications are alredy turned on in settings. Now you have to turn off notifications about messages in VK settings.</string>
@@ -62,8 +62,8 @@
     <string name="login_doing">Logging in VK is performing...</string>
     <string name="error_login">Logging error:</string>
     <string name="show_headsup_summ">Show income message in popup window at the top</string>
-    <string name="eink_notif">Second screen</string>
-    <string name="first_screen">Main screen</string>
+    <string name="eink_notif">Yotaphone e-ink screen</string>
+    <string name="first_screen">Main</string>
     <string name="settings_other">Others</string>
     <string name="show_time"><![CDATA[Show time & battery]]></string>
     <string name="show_time_summ"><![CDATA[Show time & battery status in the header on the second screen]]></string>

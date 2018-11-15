@@ -1,24 +1,18 @@
-package com.zakharchenko.yotavk;
+package com.zakharchenko.yotavk.View;
 
+import android.app.Activity;
 import android.app.NotificationManager;
-import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.graphics.Bitmap;
-import android.graphics.Canvas;
-import android.graphics.Paint;
 import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
+import android.os.Bundle;
 import android.os.Handler;
 import android.preference.PreferenceManager;
-import android.support.v4.app.NotificationCompat;
-import android.support.v7.app.ActionBarActivity;
-import android.os.Bundle;
 import android.text.Spannable;
-import android.text.SpannableString;
 import android.text.SpannableStringBuilder;
 import android.text.Spanned;
 import android.text.method.ScrollingMovementMethod;
@@ -26,50 +20,59 @@ import android.text.style.ImageSpan;
 import android.text.style.LeadingMarginSpan;
 import android.text.style.StyleSpan;
 import android.text.style.TextAppearanceSpan;
-import android.util.AttributeSet;
 import android.util.Log;
 import android.view.View;
-import android.view.ViewGroup;
-import android.widget.LinearLayout;
 import android.widget.TextView;
 
-import com.vk.sdk.api.model.VKApiMessage;
 import com.vk.sdk.api.model.VKApiUserFull;
 import com.vk.sdk.api.model.VKList;
-import com.yotadevices.sdk.BSActivity;
 import com.yotadevices.sdk.Constants;
-import com.yotadevices.sdk.utils.BitmapUtils;
 import com.yotadevices.sdk.utils.RotationAlgorithm;
+import com.zakharchenko.yotavk.Model.VKDialog;
+import com.zakharchenko.yotavk.Model.VKMessage;
+import com.zakharchenko.yotavk.MyApplication;
+import com.zakharchenko.yotavk.Presenter.ChatsPresenter;
+import com.zakharchenko.yotavk.Presenter.NotificationPresenter;
+import com.zakharchenko.yotavk.Presenter.Presenter;
+import com.zakharchenko.yotavk.R;
 
-import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
-public class BSNotifActivity extends BSActivity {
+/**
+ * Created by zakharchenko on 07.11.2018.
+ */
+public class NotifActivity extends Activity implements NotificationPresenter.Listener {
 
     static String TAG="BSNotifActivity";
-    private BroadcastReceiver bReceiver = new BroadcastReceiver() {
+
+    /*private BroadcastReceiver bReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
             if(intent.getAction().equals(MyApplication.VKRECORDSCHANGED_BROADCAST)) {
-                onStartCommand(new Intent());
+                Update();
             }
         }
     };
+*/
 
     @Override
-    protected void onBSCreate() {
-        super.onBSCreate();
+    protected void onCreate(Bundle inst) {
+        super.onCreate(inst);
 
-        Log.d(TAG, "BSCreate");
+        Log.d(TAG, "Create");
 
         Self = this;
 
-        setBSContentView(R.layout.notification);
+        presenter = new NotificationPresenter(this,MyApplication.dataProvider);
+
+        setContentView(R.layout.notification);
+
 
 
         findViewById(R.id.buttonOK).setOnClickListener(new View.OnClickListener() {
@@ -97,17 +100,17 @@ public class BSNotifActivity extends BSActivity {
             @Override
             public void onClick(View v) {
 
-                if (ConvID==0)
-                 startBSActivity(new Intent(BSNotifActivity.this,BSChatsList.class));
+                if (ConvID == 0)
+                    startActivity(new Intent(NotifActivity.this, ChatsList.class));
                 else
-                    startBSActivity(new Intent(BSNotifActivity.this,BSMessagesList.class).putExtra("ID",ConvID));
+                    startActivity(new Intent(NotifActivity.this, MessagesList.class).putExtra("ID", ConvID));
 
 
             }
         });
 
         //showShareFlipActivity(this);
-        registerReceiver(bReceiver, new IntentFilter(MyApplication.VKRECORDSCHANGED_BROADCAST));
+//        registerReceiver(bReceiver, new IntentFilter(MyApplication.VKRECORDSCHANGED_BROADCAST));
 
         findViewById(R.id.Text).setOnClickListener(new View.OnClickListener() {
             @Override
@@ -119,18 +122,23 @@ public class BSNotifActivity extends BSActivity {
             }
         });
 
-        setSystemBSUiVisibility(Constants.SystemBSFlags.SYSTEM_BS_UI_FLAG_HIDE_NAVIGATION);
+        //setSystemUiVisibility(Constants.SystemBSFlags.SYSTEM_BS_UI_FLAG_HIDE_NAVIGATION);
+
     }
 
     public void onClick(View v){
 
-           finish();
+        finish();
 
 
     }
 
-    static BSNotifActivity Self = null;
+    static NotifActivity Self = null;
 
+    @Override
+    public void showLoaded(boolean bLoaded) {
+
+    }
 
     public static void showShareFlipActivity(final Context context) {
 
@@ -191,41 +199,70 @@ public class BSNotifActivity extends BSActivity {
 
     int ConvID=0;
 
+
+    NotificationPresenter presenter;
     @Override
-    public void onStartCommand(Intent intent) {
-        super.onStartCommand(intent);
+    protected void onResume() {
+        super.onResume();
 
-        Log.d(TAG, "onStartCommand");
+        presenter.Attach(this,MyApplication.dataProvider);
 
+        Log.d(TAG, "onResume");
+
+        Update();
+    }
+
+    @Override
+    public void onChanged() {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                Update();
+
+            }
+        });
+    }
+
+    @Override
+    public void onNotify(boolean bNewMsg) {
+
+    }
+
+    private void Update()
+    {
         ConvID=0;
         // displaying
-        int nUnread = 0;
-        int nUnreadMsg = 0;
         SpannableStringBuilder builder = new SpannableStringBuilder();
 
-        final TextView  t= ((TextView )findViewById(R.id.Text));
+        final TextView t= ((TextView )findViewById(R.id.Text));
         final TextView  h= ((TextView )findViewById(R.id.Header));
 
-        MyApplication.lock.lock();
+        int nUnread = 0;
+        int nUnreadMsg = 0;
+
+/*
+
         try {
-            if (MyApplication.dialogs!=null) {
+            List<VKDialog> dialogs = presenter.GetDialogs();
 
-                VKList<MyApplication.VKMessage> msgs = new VKList<>();
+            if (dialogs!=null) {
 
-                for (MyApplication.VKDialog dlg:MyApplication.dialogs){
+                VKList<VKMessage> msgs = new VKList<>();
+
+                for (VKDialog dlg:dialogs){
                     if (dlg.unread>0) {
 
                         nUnread++;
                         nUnreadMsg+=dlg.unread;
 
 
-                        VKList<MyApplication.VKMessage> mmm =dlg.Messages;
-                        if ((mmm==null) && (dlg.message!=null)) {mmm = new VKList<>(); mmm.add(new MyApplication.VKMessage(dlg.message,dlg.uid));}
+                        VKList<VKMessage> mmm =dlg.Messages;
+                        if ((mmm==null) && (dlg.message!=null)) {mmm = new VKList<>(); mmm.add(new VKMessage(dlg.message,dlg.uid));}
 
 
                         if (mmm!=null){
 
-                            for (MyApplication.VKMessage msg:mmm){
+                            for (VKMessage msg:mmm){
                                 if ((!msg.out) && (!msg.read_state)){
                                     int q=0;
                                     for (;q<msgs.size();q++){
@@ -261,7 +298,7 @@ public class BSNotifActivity extends BSActivity {
 
 
 
-                List<MyApplication.VKMessage> l = msgs.subList(0,Math.min(7, msgs.size()));
+                List<VKMessage> l = msgs.subList(0,Math.min(7, msgs.size()));
                 // now we have last messages
 
                 if ((l!=null) && (l.size()>0)) {
@@ -274,6 +311,9 @@ public class BSNotifActivity extends BSActivity {
 
                     int lastid = 0;
                     int user_id = 0;
+*/
+                Map<String,Object> map = presenter.GetLastMessage();
+
 
                     Drawable d = getDrawable(R.drawable.yotavk);
                     d.setBounds(0, 0, h.getLineHeight(), h.getLineHeight());
@@ -281,13 +321,13 @@ public class BSNotifActivity extends BSActivity {
                     builder.append(" ", img, 0);
 
                     builder.append(" ");
-
+/*
                     Set<Integer> users = new HashSet<Integer>();
-                    Set<Integer> dialogs = new HashSet<Integer>();
-                    for (MyApplication.VKMessage msg : l) {
+                    Set<Integer> _dialogs = new HashSet<Integer>();
+                    for (VKMessage msg : l) {
                         user_id = msg.user_id;
                         users.add(msg.user_id);
-                        dialogs.add(msg.chat_id);
+                        _dialogs.add(msg.chat_id);
                     }
 
                     String str = "";
@@ -310,28 +350,29 @@ public class BSNotifActivity extends BSActivity {
 
                         //if (users.toArray())
 
-                                VKApiUserFull user = MyApplication._getUserById(user_id);
+                        VKApiUserFull user = presenter.GetUser(user_id);
 
-                            if (user != null) {
-  //                              if (new File(MyApplication.CacheDir, "img_cache/img_user_" + user.getId() + ".jpg").exists())
-  //                                  mBuilder.setLargeIcon(ImageUtil.decodeBitmapScaledSquare(MyApplication.CacheDir + "img_cache/img_user_" + user.getId() + ".jpg", 50));
-                                builder.append(user.first_name + " " + user.last_name,new TextAppearanceSpan(null, Typeface.BOLD, 40, null, null), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-                            } else
-                                builder.append("User#" + user_id,new TextAppearanceSpan(null, Typeface.BOLD, 40, null, null), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                        if (user != null) {
+                            //                              if (new File(MyApplication.CacheDir, "img_cache/img_user_" + user.getId() + ".jpg").exists())
+                            //                                  mBuilder.setLargeIcon(ImageUtil.decodeBitmapScaledSquare(MyApplication.CacheDir + "img_cache/img_user_" + user.getId() + ".jpg", 50));
+*/
+                            builder.append(map.get("Title").toString(),new TextAppearanceSpan(null, Typeface.BOLD, 40, null, null), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+        /*
+                        } else
+                            builder.append("User#" + user_id,new TextAppearanceSpan(null, Typeface.BOLD, 40, null, null), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+*/
 
+                        builder.append("\n"+new SimpleDateFormat("HH:mm").format(new Date(((Long)map.get("Date"))*1000)) + "\n", new StyleSpan(Typeface.NORMAL), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
 
-                        builder.append("\n"+new SimpleDateFormat("HH:mm").format(new Date(l.get(0).date*1000)) + "\n", new StyleSpan(Typeface.NORMAL), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-                        builder.append(str);
-
+/*                    }
                         bAddUser = false;
-                    }
                     else {
 
 
-                        if (dialogs.size()==1){
+                        if (_dialogs.size()==1){
 
 
-                            MyApplication.VKDialog dlg = MyApplication.getDialogById(l.get(0).chat_id);
+                            VKDialog dlg = presenter.GetDialog(l.get(0).chat_id);
                             String chat_name = "";
                             if ((dlg != null) && (dlg.message != null)) {
                                 chat_name = dlg.message.title;
@@ -342,7 +383,7 @@ public class BSNotifActivity extends BSActivity {
 
                         }
                         else
-                         builder.append(getString(R.string.app_name),new TextAppearanceSpan(null, Typeface.BOLD, 40, null, null), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                            builder.append(getString(R.string.app_name),new TextAppearanceSpan(null, Typeface.BOLD, 40, null, null), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
 
 
                         builder.append("\n"+new SimpleDateFormat("HH:mm").format(new Date(l.get(0).date*1000)) + "\n", new StyleSpan(Typeface.NORMAL), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
@@ -361,10 +402,12 @@ public class BSNotifActivity extends BSActivity {
                         builder.append(str);
 
                     }
-
-                    h.setText(builder);
+*/
+                    h.setText(builder.toString());
                     builder.clear();
+                    builder.append(map.get("Text").toString());
 
+/*
 
                     //if (l.size() > 0)
                     {
@@ -374,13 +417,13 @@ public class BSNotifActivity extends BSActivity {
                         int lastchat =-1;
 
 
-                        for (MyApplication.VKMessage msg : l) {
+                        for (VKMessage msg : l) {
 
                             String str1 = "";
                             if (true) {
                                 if ((lastid != msg.user_id) || (lastchat!=msg.chat_id)){
 
-                                    VKApiUserFull user = MyApplication._getUserById(msg.user_id);
+                                    VKApiUserFull user = presenter.GetUser(msg.user_id);
 
                                     if (bAddUser){
                                         if (user != null) {
@@ -390,10 +433,10 @@ public class BSNotifActivity extends BSActivity {
 
 
 
-                                        if (msg.chat_id > MyApplication.CHAT_UID_OFFSET) {
+                                        if (msg.chat_id > VKDialog.CHAT_UID_OFFSET) {
                                             if  (bAddChat) {
 
-                                                MyApplication.VKDialog dlg = MyApplication.getDialogById(msg.chat_id);
+                                                VKDialog dlg = presenter.GetDialog(msg.chat_id);
                                                 String chat_name = "";
                                                 if ((dlg != null) && (dlg.message != null))
                                                     chat_name = dlg.message.title;
@@ -410,11 +453,11 @@ public class BSNotifActivity extends BSActivity {
                                     lastid = msg.user_id;
                                     lastchat = msg.chat_id;
                                 }
-                                 else {
-                                 //   str += " ";
+                                else {
+                                    //   str += " ";
                                 }
                                 if (str1.length()>0)
-                                 builder.append("\n"+str1,new TextAppearanceSpan(null, Typeface.BOLD, 35, null, null), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                                    builder.append("\n"+str1,new TextAppearanceSpan(null, Typeface.BOLD, 35, null, null), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
                             }
                             builder.append(msg.body+"\n",new LeadingMarginSpan.Standard(10, 10), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
                         }
@@ -425,51 +468,23 @@ public class BSNotifActivity extends BSActivity {
 
                 }
 
-/*
-                    int lastid =0;
-
-                for (MyApplication.VKMessage msg:l) {
-
-                    if (lastid!=msg.user_id) {
-                        if (msg.user_id > MyApplication.CHAT_UID_OFFSET) {
-                            builder.append(msg.title + ":\n", new TextAppearanceSpan(null, Typeface.BOLD, 40, null, null), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-                        } else {
-                            VKApiUserFull user = MyApplication._getUserById(msg.user_id);
-                            if (user != null) {
-                                builder.append(user.first_name + " " + user.last_name + ":", new TextAppearanceSpan(null, Typeface.BOLD, 40, null, null), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-                            } else
-                                builder.append("User#" + msg.user_id + ":", new TextAppearanceSpan(null, Typeface.BOLD, 40, null, null), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-
-
-                        }
-                        lastid = msg.user_id;
-                    }
-                   builder.append(msg.body);
-                }
-*/
-
 
 
             }
             else
-             finish();
+                finish();
 
         }
         finally {
-            MyApplication.lock.unlock();
+
         }
 
-
+*/
         if (builder.length()==0) {finish();return;};
+
         if (isFinishing()) return;
 
-       // showShareFlipActivity(this);
-
         t.setText(builder);
-        //((TextView)findView
-        //
-        // ById(R.id.Header)).setText(String.format(""));
-
 
         t.setMovementMethod(new ScrollingMovementMethod());
 
@@ -519,15 +534,19 @@ public class BSNotifActivity extends BSActivity {
     }
 
 
+    @Override
+    protected void onPause() {
+        super.onPause();
 
+        presenter.Destroy();
+    }
 
     @Override
-    protected void onBSStop() {
-        unregisterReceiver(bReceiver);
+    protected void onStop() {
 
         Self = null;
 
-        super.onBSStop();
+        super.onStop();
 
     }
 }

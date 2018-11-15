@@ -1,21 +1,6 @@
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
 
     <PreferenceCategory
-        android:title="@string/eink_notif"
->
-    <ListPreference
-        android:defaultValue="10"
-        android:entries="@array/notif_time"
-        android:entryValues="@array/notif_time_values"
-        android:key="notif_time"
-        android:negativeButtonText="@null"
-        android:positiveButtonText="@null"
-        android:persistent="true"
-        android:title="@string/settings_notif_time"
-        android:summary="@string/settings_notif_time"
-        />
-    </PreferenceCategory>
-    <PreferenceCategory
         android:title="@string/first_screen">
     <SwitchPreference
         android:key="post_notif"
@@ -67,6 +52,21 @@
         android:key="keep_notif"
         android:title="@string/keep_notif"
         android:summary="@string/keep_notif_summ"/>
+    </PreferenceCategory>
+    <PreferenceCategory
+        android:title="@string/eink_notif"
+        >
+        <ListPreference
+            android:defaultValue="10"
+            android:entries="@array/notif_time"
+            android:entryValues="@array/notif_time_values"
+            android:key="notif_time"
+            android:negativeButtonText="@null"
+            android:positiveButtonText="@null"
+            android:persistent="true"
+            android:title="@string/settings_notif_time"
+            android:summary="@string/settings_notif_time"
+            />
     </PreferenceCategory>
 
     <PreferenceCategory

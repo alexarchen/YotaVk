@@ -38,7 +38,7 @@
             android:name="com.yotadevices.sdk" android:required="false"/>
 
         <activity
-            android:name=".MainActivity"
+            android:name=".View.MainActivity"
             android:label="@string/app_name">
             <meta-data
                 android:name="com.yotadevices.sdk.BS_LAUNCHER"
@@ -68,9 +68,9 @@
             </intent-filter>
         </receiver>
 
-        <service android:name=".RegistrationIntentService" />
+        <service android:name=".GCM.RegistrationIntentService" />
         <service
-            android:name=".BSWidget$WidgetService"
+            android:name=".View.BSWidget$WidgetService"
             android:label="@string/serv_name"
             android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
             <intent-filter>
@@ -80,7 +80,7 @@
 
 
         <receiver
-            android:name=".BSWidget"
+            android:name=".View.BSWidget"
             android:label="@string/app_name">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
@@ -105,14 +105,14 @@
         </receiver>
 
         <service
-            android:name=".MyGcmListenerService"
+            android:name=".GCM.MyGcmListenerService"
             android:exported="false">
             <intent-filter>
                 <action android:name="com.google.android.c2dm.intent.RECEIVE" />
             </intent-filter>
         </service>
         <service
-            android:name=".MyInstanceIDListenerService"
+            android:name=".GCM.MyInstanceIDListenerService"
             android:exported="false">
             <intent-filter>
                 <action android:name="com.google.android.gms.iid.InstanceID" />
@@ -120,19 +120,27 @@
         </service>
 
         <activity
-            android:name=".MessagesList"
-            android:label="@string/title_activity_messages_list" />
+            android:name=".View.MessagesList"
+            android:label="@string/title_activity_messages_list"
+            android:launchMode="singleTop"
+            />
         <activity
-            android:name=".ChatsList"
-            android:label="@string/title_activity_chats_list" />
+            android:name=".View.ChatsList"
+            android:label="@string/title_activity_chats_list"
+            android:launchMode="singleTask"
+            />
 
-        <service android:name=".BSChatsList" android:exported="true" />
+        <activity
+            android:name=".View.NotifActivity"
+            />
+
+        <!--<service android:name=".BSChatsList" android:exported="true" />
         <service android:name=".BSMessagesList" />
-        <service android:name=".BSNotifActivity" />
+        <service android:name=".BSNotifActivity" /> -->
 
         <activity
-            android:name=".SettingsActivity"
-            android:label="@string/title_activity_settings"></activity>
+            android:name=".View.SettingsActivity"
+            android:label="@string/title_activity_settings"/>
     </application>
 
 </manifest>

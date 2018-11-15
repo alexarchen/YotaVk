@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.zakharchenko.yotavk;
+package com.zakharchenko.yotavk.GCM;
 
 import android.content.Intent;
 import android.content.SharedPreferences;

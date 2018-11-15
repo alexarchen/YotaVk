@@ -2,6 +2,6 @@
 <epd-widget-provider
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:sdk="http://schemas.android.com/apk/com.yotadevices.sdk"
-    sdk:size="large|extra_large"
+    sdk:size="large_plus|extra_large|full_screen"
     sdk:category="Communication"
-    sdk:invertable="large|extra_large"/>
+    sdk:invertable="large_plus|extra_large|full_screen"/>

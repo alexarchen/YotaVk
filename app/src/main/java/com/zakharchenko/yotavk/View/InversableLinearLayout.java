@@ -1,4 +1,4 @@
-package com.zakharchenko.yotavk;
+package com.zakharchenko.yotavk.View;
 
 import android.content.Context;
 import android.graphics.Bitmap;
@@ -58,10 +58,8 @@ public class InversableLinearLayout extends LinearLayout {
         Bitmap bitmap = Bitmap.createBitmap(src.getWidth(), src.getHeight(),
                 Bitmap.Config.ARGB_8888);
         Canvas canvas = new Canvas(bitmap);
-
         Paint paint = new Paint();
-
-       // paint.setColorFilter(ColorFilter_Sepia);
+        paint.setColorFilter(ColorFilter_Sepia);
         canvas.drawBitmap(src, 0, 0, paint);
 
         return bitmap;
@@ -73,8 +71,8 @@ public class InversableLinearLayout extends LinearLayout {
         Bitmap bmp = Bitmap.createBitmap(getWidth(), getHeight(), Bitmap.Config.ARGB_8888);
         Canvas bmpCnavas = new Canvas(bmp);
         super.dispatchDraw(bmpCnavas);
+        canvas.drawBitmap(createInvertedBitmap(bmp), 0, 0, new Paint());
 
-        canvas.drawBitmap(BitmapUtils.invertBitmap(bmp), 0, 0, new Paint());
     }
         else super.dispatchDraw(canvas);
     }

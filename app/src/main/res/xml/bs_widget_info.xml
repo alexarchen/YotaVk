@@ -2,6 +2,6 @@
 <backscreen-widget-provider
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:sdk="http://schemas.android.com/apk/com.yotadevices.sdk"
-    sdk:size="small|medium"
+    sdk:size="small|medium|large|large_plus|extra_large|full_screen"
     sdk:category="Communication"
-    sdk:invertable="small|medium"/>
+    sdk:invertable="small|medium|large|large_plus|extra_large|full_screen"/>

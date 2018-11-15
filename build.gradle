@@ -19,6 +19,7 @@ allprojects {
         jcenter()
         // Add YotaDevices maven repository
         maven { url "http://fw.ydevices.com/maven" }
+
     }
 }
 

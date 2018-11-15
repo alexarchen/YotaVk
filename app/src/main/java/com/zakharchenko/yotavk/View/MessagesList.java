@@ -1,6 +1,7 @@
-package com.zakharchenko.yotavk;
+package com.zakharchenko.yotavk.View;
 
 import android.app.Activity;
+import android.app.Dialog;
 import android.app.NotificationManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -68,7 +69,17 @@ import com.vk.sdk.api.model.VKAttachments;
 import com.vk.sdk.api.model.VKList;
 import com.vk.sdk.api.model.VKUsersArray;
 import com.yotadevices.sdk.Epd;
+import com.yotadevices.sdk.EpdIntentCompat;
 import com.yotadevices.sdk.utils.RotationAlgorithm;
+import com.zakharchenko.yotavk.Model.VKDialog;
+import com.zakharchenko.yotavk.Model.VKMessage;
+import com.zakharchenko.yotavk.MyApplication;
+import com.zakharchenko.yotavk.Presenter.MessagesPresenter;
+import com.zakharchenko.yotavk.Presenter.Presenter;
+import com.zakharchenko.yotavk.R;
+import com.zakharchenko.yotavk.Utils.Utils;
+
+import junit.framework.Assert;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.client.utils.URLEncodedUtils;
@@ -88,11 +99,13 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 
-public class MessagesList extends Activity {
+public class MessagesList extends Activity implements MessagesPresenter.MessageListener{
 
    public final String TAG="MessagesList";
 
- protected int ConversationID=0;
+   MessagesPresenter presenter;
+
+   protected int ConversationID=0;
 
     public class P2BReceiver extends BroadcastReceiver {
 
@@ -147,15 +160,20 @@ public class MessagesList extends Activity {
 
         // Launch a back screen activity
 
-        getApplicationContext().startService(new Intent(getApplicationContext(), BSMessagesList.class).putExtra("ID", ConversationID));
+        // TODO SDK2
+        if (Utils.isClass("com.yotadevices.sdk.EpdIntentCompat")) {
+            Intent i = new Intent(getApplicationContext(), MessagesList.class).putExtra("ID", ConversationID);
+            EpdIntentCompat.addEpdFlags(i,EpdIntentCompat.FLAG_ACTIVITY_START_ON_EPD_SCREEN);
+            getApplicationContext().startActivity(i);
+        }
 
 
 
     }
 
-
     private P2BReceiver bP2BReceiver = new P2BReceiver();
 
+/*
     private BroadcastReceiver bReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -190,98 +208,52 @@ public class MessagesList extends Activity {
 
            }
         };
+*/
 
-    public class ImageLoadTask extends AsyncTask<Void, Void, Bitmap> {
+    @Override
+    public void onNewMessage() {
 
-        private String url;
-        private ImageView imageView=null;
-        private LevelListDrawable  d=null;
-        private TextView tv=null;
+        ListView listView = ((ListView) findViewById(R.id.listViewConv));
+        if (listView.getLastVisiblePosition()>=listView.getAdapter().getCount()-2)
+         listView.setTranscriptMode(AbsListView.TRANSCRIPT_MODE_ALWAYS_SCROLL);
 
-        public ImageLoadTask(String url, ImageView imageView) {
-            this.url = url;
-            this.imageView = imageView;
-        }
+    }
 
-        public ImageLoadTask(String url, LevelListDrawable  d,TextView tv) {
-            this.url = url;
-            this.d = d;
-            this.tv = tv;
-        }
+    @Override
+    public void onChanged() {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
 
-        @Override
-        protected Bitmap doInBackground(Void... params) {
-            try {
-                URL urlConnection = new URL(url);
 
-                HttpURLConnection connection = (HttpURLConnection) urlConnection
-                        .openConnection();
-                connection.setDoInput(true);
-                connection.setUseCaches(true);
+                onUpdateHeader();
+                onUpdate();
+            }
+        });
+    }
 
-                connection.connect();
-                InputStream input = connection.getInputStream();
-                Bitmap myBitmap = BitmapFactory.decodeStream(input);
 
-                String classname = input.toString();
-                if(classname.contains("HttpResponseCache")){
+    @Override
+    public void showLoaded(final boolean bLoaded) {
 
-                    Log.d("IMAGE","From cache");
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+
+                if (bLoaded) {
+                    ((AnimationDrawable) ((ImageView) findViewById(R.id.Wait)).getDrawable()).start();
+                    findViewById(R.id.Wait).setVisibility(View.VISIBLE);
+                } else {
+                    ((AnimationDrawable) ((ImageView) findViewById(R.id.Wait)).getDrawable()).stop();
+                    findViewById(R.id.Wait).setVisibility(View.GONE);
                 }
-                else
-                    Log.d("IMAGE","Loaded: "+url);
-
-
-                return myBitmap;
-            } catch (Exception e) {
-                e.printStackTrace();
             }
-            return null;
-        }
+        });
 
-        @Override
-        protected void onPostExecute(Bitmap result) {
-            super.onPostExecute(result);
-            if (imageView!=null)
-             imageView.setImageBitmap(result);
-            if (d!=null) {
-                BitmapDrawable dr = new BitmapDrawable(result);
-
-
-                d.addLevel(1, 1, dr);
-                d.setLevel(1);
-
-                CharSequence t = tv.getText();
-                tv.setText(t);
-            }
-        }
 
     }
 
-    List<ImageLoadTask> imageTasks = new ArrayList<ImageLoadTask>();
-
-    void AddLoadImageTask(String url,ImageView view){
-        ImageLoadTask task = new ImageLoadTask(url, view);
-        imageTasks.add(task);
-        task.execute();
-    }
-
-    void AddLoadImageTask(String url,LevelListDrawable d,TextView view){
-        ImageLoadTask task = new ImageLoadTask(url, d,view);
-        imageTasks.add(task);
-        task.execute();
-    }
-
-    void ClearTasks(){
-        for (ImageLoadTask task:imageTasks){
-            task.cancel(false);
-        }
-        imageTasks.clear();
-    }
-
-    static MessagesList Self = null;
     public boolean bPaused = true;
-    static boolean isRunning(){return ((Self!=null) && (Self.bPaused));}
 
     boolean SendUnread = false;
 
@@ -293,7 +265,6 @@ public class MessagesList extends Activity {
                 (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         mNotificationManager.cancel(1);
 
-        Self = this;
         bPaused = true;
 
         try {
@@ -301,31 +272,24 @@ public class MessagesList extends Activity {
         }
         catch (Exception e){
             ConversationID=0;
+            finish();
+            return;
         }
-
 
 
 
         setContentView(R.layout.activity_messages_list);
 
-        if (Epd.isEpdContext(this)){
+        if (Utils.isYotaphoneSDK())
+         if (Epd.isEpdContext(this)){
             ((View )findViewById(R.id.Header).getParent()).setBackgroundColor(Color.BLACK);
 
-        }
+         }
 
-            boolean bLoaded = false;
-        MyApplication.lock.lock();
-        try {
-          MyApplication.VKDialog dlg = MyApplication.getDialogById(ConversationID);
-          if (dlg==null) // Create new user conversation
-          {
-              dlg = MyApplication.CreateDialog(ConversationID);
-          }
-          if (dlg.Messages!=null) bLoaded = true;
-        }
-        finally {
-            MyApplication.lock.unlock();
-        }
+
+        //((ListView) findViewById(R.id.listViewConv)).setTranscriptMode(ListView.TRANSCRIPT_MODE_ALWAYS_SCROLL);
+        //((ListView) findViewById(R.id.listViewConv)).setStackFromBottom(true);
+
 
         ((ListView) findViewById(R.id.listViewConv)).setOnScrollListener(new AbsListView.OnScrollListener() {
             @Override
@@ -336,43 +300,41 @@ public class MessagesList extends Activity {
             @Override
             public void onScroll(AbsListView view, int firstVisibleItem, int visibleItemCount, int totalItemCount) {
 
-                if (view.getAdapter()!=null) {
+
+                if (view.getAdapter() != null) {
                     //for (int q=firstVisibleItem;q<firstVisibleItem+visibleItemCount;q++)
                     //    if (!((MyConvAdapter) view.getAdapter()).getItem(q).read_state)
-                      if ((totalItemCount==firstVisibleItem+visibleItemCount) && (!SendUnread))
-                        {
-                            int nUr=0;
+                    if ((totalItemCount == firstVisibleItem + visibleItemCount) && (!SendUnread)) {
+                        int nUr = 0;
 
-                            try {
+                        try {
 
 
-                                for (int q=0;q<totalItemCount;q++){
-                                    MyApplication.VKMessage msg = ((MyConvAdapter)view.getAdapter()).getItem(q);
+                            for (int q = 0; q < totalItemCount; q++) {
+                                VKMessage msg = ((MyConvAdapter) view.getAdapter()).getItem(q);
 
-                                    if ((!msg.read_state) && (!msg.out))
-                                     nUr++;
-                                }
+                                if ((!msg.read_state) && (!msg.out))
+                                    nUr++;
                             }
-                            catch (Exception e){
-                            }
+                        } catch (Exception e) {
+                        }
 
-                            if (nUr>0) {
-                                MyApplication.MarkAsRead(ConversationID);
-                                onUpdateHeader();
+                        if (nUr > 0) {
+                            presenter.MakeRead();
+                            onUpdateHeader();
 
 
-                            }
+                        }
 
-                            SendUnread = true;
+                        SendUnread = true;
 
                         //    break;
-                        }
+                    }
                 }
 
             }
         });
-        if (bLoaded)
-         onUpdate();
+
 
         findViewById(R.id.Send).setOnClickListener(new View.OnClickListener() {
             @Override
@@ -395,26 +357,34 @@ public class MessagesList extends Activity {
             @Override
             public void afterTextChanged(Editable s) {
 
-                if (s.length()>0) {findViewById(R.id.Send).setEnabled(true); ((ImageView)findViewById(R.id.Send)).setImageDrawable(getDrawable(R.drawable.send));}
-                else {findViewById(R.id.Send).setEnabled(false); ((ImageView)findViewById(R.id.Send)).setImageDrawable(getDrawable(R.drawable.send_grey));}
+                if (s.length() > 0) {
+                    findViewById(R.id.Send).setEnabled(true);
+                    ((ImageView) findViewById(R.id.Send)).setImageDrawable(getDrawable(R.drawable.send));
+                } else {
+                    findViewById(R.id.Send).setEnabled(false);
+                    ((ImageView) findViewById(R.id.Send)).setImageDrawable(getDrawable(R.drawable.send_grey));
+                }
 
             }
         });
+
+        presenter = new MessagesPresenter(this, MyApplication.dataProvider,ConversationID);
+
     }
+
+    public static MessagesList Self = null;
 
     @Override
     protected void onResume(){
         super.onResume();
-        Log.d(TAG, "Register receiver");
+        Log.d(TAG, "onResume");
+
+        presenter.Attach(this, MyApplication.dataProvider);
 
         bPaused = false;
         last_message_id = 0;
 
-        IntentFilter ifil = new IntentFilter(MyApplication.VKRECORDSCHANGED_BROADCAST);
-        ifil.addAction(MyApplication.VKUSERSCHANGED_BROADCAST);
-        ifil.addAction(MyApplication.VKREADCHANGED_BROADCAST);
-
-        registerReceiver(bReceiver, ifil);
+        Self = this;
         // renew dialogs & messages
         IntentFilter ifil2 = new IntentFilter("yotaphone.intent.action.IS_BS_SUPPORTED");
         ifil2.addAction("yotaphone.intent.action.P2B");
@@ -422,19 +392,6 @@ public class MessagesList extends Activity {
 
         //MyApplication.GetMessages(((MyApplication)getApplication()).defListener);
         findViewById(R.id.Wait).setVisibility(View.VISIBLE);
-        ((AnimationDrawable)((ImageView) findViewById(R.id.Wait)).getDrawable()).start();
-
-        // refresh
-        MyApplication.GetMessages(ConversationID, new VKRequest.VKRequestListener() {
-            @Override
-            public void onComplete(VKResponse response) {
-                super.onComplete(response);
-
-                sendBroadcast(new Intent(MyApplication.VKRECORDSCHANGED_BROADCAST));//, null, MessagesList.this, MessagesList.class));
-            }
-        });
-
-
     }
 
 
@@ -442,36 +399,36 @@ public class MessagesList extends Activity {
     protected void onPause(){
        super.onPause();
 
-        ClearTasks();
+        presenter.Destroy();
+
+        Self = null;
 
         bPaused = true;
-        ((AnimationDrawable)((ImageView) findViewById(R.id.Wait)).getDrawable()).stop();
-
 
         Log.d(TAG, "UnRegister receiver");
-        unregisterReceiver(bReceiver);
         unregisterReceiver(bP2BReceiver);
     }
 
     final String DATE_FORMAT = "dd MMMM yyyy";
 
-    public class MyConvAdapter extends ArrayAdapter<MyApplication.VKMessage> {
+    public class MyConvAdapter extends ArrayAdapter<VKMessage> {
 
-        protected MyApplication.VKDialog Dialog;
+        protected VKDialog Dialog;
 
-        public MyConvAdapter(Context context, int textViewResourceId, MyApplication.VKDialog dlg) {
+        public MyConvAdapter(Context context, int textViewResourceId, VKDialog dlg) {
             super(context, textViewResourceId, dlg.Messages);
             Dialog = dlg;
         }
-        public void refresh(MyApplication.VKDialog dlg) {
-            clear();
-            addAll(dlg.Messages);
-            notifyDataSetChanged();
-        }
-
         @Override
         public View getView(int position, View convertView, ViewGroup parent) {
             return getCustomView(position, convertView, parent);
+        }
+
+        public void refresh(VKDialog dlg){
+            Dialog = dlg;
+            clear();
+            addAll(Dialog.Messages);
+            notifyDataSetChanged();
         }
 
         public View getCustomView(int position, View convertView, ViewGroup parent) {
@@ -494,18 +451,26 @@ public class MessagesList extends Activity {
                    if (att.getType().equals(VKAttachments.TYPE_PHOTO)){
                        try {
                            VKApiPhoto photo = (VKApiPhoto) att;
-                           ImageView imageView = new ImageView(parent.getContext());
+                           final ImageView imageView = new ImageView(parent.getContext());
                            imageView.setMinimumWidth(700);
                            imageView.setMinimumHeight(photo.height * 700 / photo.width);
                            //imageView.setImageResource(R.drawable.spin_blue_2);
 
                            ((ViewGroup) row.findViewById(R.id.Attachments)).addView(imageView);
-                           if (photo.photo_604.length() > 0)
-                               AddLoadImageTask(photo.photo_604, imageView);
-                           else if (photo.photo_807.length() > 0)
-                               AddLoadImageTask(photo.photo_807, imageView);
+                           String photourl = "";
+                           if (photo.photo_604.length() > 0) photourl = photo.photo_604;
+                           else if (photo.photo_807.length() > 0) photourl = photo.photo_807;
                            else
-                               AddLoadImageTask(photo.photo_130, imageView);
+                               photourl  = photo.photo_130;
+
+                           presenter.LoadImage(new MessagesPresenter.ImageLoadTask(photourl) {
+                               @Override
+                               protected void onPostExecute(Bitmap result) {
+                                   super.onPostExecute(result);
+                                   imageView.setImageBitmap(result);
+                               }
+                           });
+
                        }
                        catch (Exception e){}
                    }
@@ -528,7 +493,7 @@ public class MessagesList extends Activity {
 
                        if ((post.from_id != 0) && (post.text.length() > 0)) {
 
-                           TextView tv = new TextView(parent.getContext());
+                           final TextView tv = new TextView(parent.getContext());
                            tv.setMovementMethod(LinkMovementMethod.getInstance());
 
                            SpannableStringBuilder sb = new SpannableStringBuilder(getString(R.string.wall)+"\n");
@@ -540,7 +505,7 @@ public class MessagesList extends Activity {
 
                                   VKApiPhoto photo = (VKApiPhoto) att1;
 
-                                  LevelListDrawable d = new LevelListDrawable();
+                                  final LevelListDrawable d = new LevelListDrawable();
                                   //Drawable d = getDrawable(R.drawable.send_grey);
                                   d.setBounds(0, 0, 640, photo.height * 640 / photo.width);
                                   //d.addLevel(0,0,getDrawable(R.drawable.send_grey));
@@ -549,13 +514,25 @@ public class MessagesList extends Activity {
                                   sb.append(" ", new ImageSpan(d), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
  //                                 sb.setSpan(new ImageSpan(d), w, w + 1, 0);
 
-
-                                  if (photo.photo_604.length() > 0)
-                                      AddLoadImageTask(photo.photo_604, d,tv);
-                                  else if (photo.photo_807.length() > 0)
-                                      AddLoadImageTask(photo.photo_807, d,tv);
+                                  String photourl = "";
+                                  if (photo.photo_604.length() > 0) photourl = photo.photo_604;
+                                  else if (photo.photo_807.length() > 0) photourl = photo.photo_807;
                                   else
-                                      AddLoadImageTask(photo.photo_130, d,tv);
+                                      photourl  = photo.photo_130;
+
+                                  presenter.LoadImage(new MessagesPresenter.ImageLoadTask(photourl){
+                                      @Override
+                                      protected void onPostExecute(Bitmap result) {
+                                          super.onPostExecute(result);
+
+                                          BitmapDrawable dr = new BitmapDrawable(result);
+                                          d.addLevel(1, 1, dr);
+                                          d.setLevel(1);
+                                          CharSequence t = tv.getText();
+                                          tv.setText(t);
+
+                                      }
+                                  });
 
 
                                break;
@@ -621,7 +598,7 @@ public class MessagesList extends Activity {
 
             if ((Dialog.isMulti()) && (!msg.out) && ((position==0) || (getItem(position-1).user_id!=msg.user_id))) {
 
-                VKApiUserFull user = MyApplication._getUserById(msg.user_id);
+                VKApiUserFull user = presenter.getUser(msg.user_id);
                 if (user!=null)
                   ((TextView) row.findViewById(R.id.Header)).setText(user.first_name+" "+user.last_name);// only for multidialog
                 else
@@ -643,16 +620,6 @@ public class MessagesList extends Activity {
 
 
 
-
-/*
-    @Override
-    public void onBackPressed() {
-
-        if (ConversationID>0) endConversation();
-        else
-        super.onBackPressed();
-    }
-*/
     protected int last_message_id = 0;
 
     protected void onUpdate() {
@@ -667,167 +634,109 @@ public class MessagesList extends Activity {
 
         }
 
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
+                VKDialog dlg = presenter.GetDialog();
 
-                findViewById(R.id.Wait).setVisibility(View.GONE);
-                ((AnimationDrawable)((ImageView) findViewById(R.id.Wait)).getDrawable()).stop();
+                if (dlg != null) {
+                    /*
+                    if (dlg.chat_id > 0)
+                        ((TextView) findViewById(R.id.Header)).setText(dlg.message.title);
+                    else {
 
-                int  NeedRequestUser=0;
-                MyApplication.lock.lock();
-                try {
-                    MyApplication.VKDialog dlg = ((MyApplication) getApplication()).getDialogById(ConversationID);
+                        VKApiUserFull user = presenter.getUser(dlg.uid);
+                        Assert.assertNotNull(user);
+                        ((TextView) findViewById(R.id.Header)).setText(user.first_name + " " + user.last_name);
+
+                    }*/
+
+                    ListView listView = ((ListView) findViewById(R.id.listViewConv));
+
+                    if ((dlg.Messages != null) && (dlg.message != null)) {
+
+                        if (listView.getAdapter() == null) {
+                            listView.setAdapter(new MyConvAdapter(MessagesList.this, R.layout.message_in, dlg));
+                            presenter.MakeRead();
+                        } else {
+
+                            if ((listView.getLastVisiblePosition() >listView.getCount() - 1) && (dlg.unread>0))
+                                presenter.MakeRead();
 
 
-                    if (dlg != null) {
-                        if (dlg.chat_id>0)
-                            ((TextView) findViewById(R.id.Header)).setText(dlg.message.title);
-                        else {
 
-                            VKApiUserFull user = ((MyApplication) getApplication()).getUserById(dlg.uid);
-                            if (user != null)
-                                ((TextView) findViewById(R.id.Header)).setText(user.first_name + " " + user.last_name);
-                            else {
-                                ((TextView) findViewById(R.id.Header)).setText("User #" + dlg.getId());
-                                NeedRequestUser = dlg.uid;
+                            //((ListView) findViewById(R.id.listViewConv)).setAdapter(new MyConvAdapter(MessagesList.this, R.layout.message_in, dlg));
+
+                            ((MyConvAdapter) (listView).getAdapter()).refresh(dlg);//notifyDataSetChanged();
+                            //listView.invalidateViews();
+                            if (listView.getTranscriptMode()==AbsListView.TRANSCRIPT_MODE_ALWAYS_SCROLL) {
+                                listView.smoothScrollToPosition(listView.getCount() - 1);
+                                listView.setTranscriptMode(AbsListView.TRANSCRIPT_MODE_NORMAL);
                             }
+
+
                         }
-                    }
+                        ;
 
-                    if ((dlg != null) && (dlg.Messages != null) && (dlg.message!=null)) {
-                        //MyApplication.MarkAsRead(dlg.uid);
-
-                        /*int hash =dlg.message.id+dlg.chat_id;
-                        for (MyApplication.VKMessage msg: dlg.Messages)
-                         hash+=msg.id+(msg.read_state?1:0);
-*/
-                        //if ((last_message_id==0) || (hash!=last_message_id))
-                           {
-
-                            if (((ListView) findViewById(R.id.listViewConv)).getAdapter()==null) {
-                                ((ListView) findViewById(R.id.listViewConv)).setAdapter(new MyConvAdapter(MessagesList.this, R.layout.message_in, dlg));
-                                MyApplication.MarkAsRead(dlg.uid);
-                            }
-                            else {
-                                if (((ListView) findViewById(R.id.listViewConv)).getLastVisiblePosition()>=((ListView) findViewById(R.id.listViewConv)).getCount()-1)
-                                    MyApplication.MarkAsRead(dlg.uid);
-
-                                ((MyConvAdapter)((ListView) findViewById(R.id.listViewConv)).getAdapter()).refresh(dlg);
-
-
-                            };
-                        }
-
-                       // last_message_id = hash;
-                    }
-
-
-                } finally {
-                    MyApplication.lock.unlock();
-                }
-
-                if (NeedRequestUser>0){
-
-                    MyApplication.GetUser(NeedRequestUser, new VKRequest.VKRequestListener() {
-                        @Override
-                        public void onComplete(VKResponse response) {
-                            super.onComplete(response);
-                            sendBroadcast(new Intent(MyApplication.VKUSERSCHANGED_BROADCAST));
-                        }
-                    });
+                        // last_message_id = hash;
+                    } else Log.d(TAG, "No messages in dialog " + ConversationID);
 
                 }
-            }
-        });
-
-
 
     }
 
 
     protected void onUpdateHeader(){
 
-     runOnUiThread(new Runnable() {
-         @Override
-         public void run() {
 
-             MyApplication.lock.lock();
              try {
-                 MyApplication.VKDialog dlg = ((MyApplication) getApplication()).getDialogById(ConversationID);
+                 VKDialog dlg = presenter.GetDialog();
 
 
                  if ((dlg != null) && (dlg.Messages!=null)) {
 
-                     int nUnr = 0;
-                     for (MyApplication.VKMessage msg: dlg.Messages){
+                     /*int nUnr = 0;
+                     for (VKMessage msg: dlg.Messages){
                          if ((!msg.out) && (!msg.read_state)) nUnr++;
                      }
 
                      String unread="";
                      if (nUnr>0)
                       unread = " "+nUnr;
+*/
 
-                     Log.d(TAG,"Numer of unread: "+nUnr);
+                     String nUng = dlg.unread==0?"":""+dlg.unread;
+                     Log.d(TAG,"Numer of unread: "+nUng );
                      if (dlg.chat_id>0)
-                         ((TextView) findViewById(R.id.Header)).setText(dlg.message.title+" "+unread);
+                         ((TextView) findViewById(R.id.Header)).setText(dlg.message.title+" "+nUng );
                      else {
 
-                         VKApiUserFull user = ((MyApplication) getApplication()).getUserById(dlg.uid);
-                         if (user != null)
-                             ((TextView) findViewById(R.id.Header)).setText(user.first_name + " " + user.last_name+" "+unread);
-                         else {
-                             ((TextView) findViewById(R.id.Header)).setText("User #" + dlg.uid+" "+unread);
+                         VKApiUserFull user = presenter.getUser(dlg.uid);
+                         Assert.assertNotNull(user);
+                         ((TextView) findViewById(R.id.Header)).setText(user.first_name + " " + user.last_name+" "+nUng );
+
                          }
-                     }
+
                  }
 
-             } finally {
-                 MyApplication.lock.unlock();
+             } catch (Exception e){
+                Log.e(TAG,e.toString());
              }
 
-         }
-     });
     }
 
-  public void onSendClick(View v){
-
+  public void onSendClick(View v) {
 
 
       try {
 
-          if (MyApplication.SendMessage(ConversationID,((TextView) findViewById(R.id.Message)).getText().toString(), new VKRequest.VKRequestListener() {
-              @Override
-              public void onComplete(VKResponse response) {
-                  super.onComplete(response);
-
-                  onUpdate();
-              }
-
-              @Override
-              public void onError(VKError error) {
-                  super.onError(error);
-
-                  onUpdate();
-
-              }
-          })){
-
-              ((EditText)findViewById(R.id.Message)).setText("");
-              onUpdate();
-          }
+          ((ListView) findViewById(R.id.listViewConv)).setTranscriptMode(ListView.TRANSCRIPT_MODE_ALWAYS_SCROLL);
+          presenter.SendMessage(((TextView) findViewById(R.id.Message)).getText().toString());
+          ((EditText)findViewById(R.id.Message)).setText("");
+//          ((ListView) findViewById(R.id.listViewConv)).setSelection(((ListView) findViewById(R.id.listViewConv)).getAdapter().getCount() - 1);
+          //onUpdate();
       }
       catch (Exception e){}
 
 
   }
 
-    @Override
-    protected void onDestroy() {
-        Self = null;
-
-        super.onDestroy();
-
-    }
 
 }

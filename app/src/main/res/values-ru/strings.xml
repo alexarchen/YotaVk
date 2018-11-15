@@ -22,7 +22,7 @@
     <string name="newmsgs2">%d сообщ.</string>
     <string name="newmsgs5">%d сообщ.</string>
     <string name="post_notif">Системные уведомления</string>
-    <string name="post_notif_summ">Уведомления на основном экране о новых сообщениях (требуется для YoMessage)</string>
+    <string name="post_notif_summ">Системные уведомления о новых сообщениях</string>
     <string name="use_VK">Открывать ВКонтакте</string>
     <string name="use_VK_summ">Открывать системные уведомления в официальном приложении ВКонтакте</string>
     <string name="notif_sound">Звук уведомления</string>
@@ -48,8 +48,8 @@
     <string name="login_doing">Осуществляется вход в ВК</string>
     <string name="error_login">Ошибка входа: </string>
     <string name="show_headsup_summ">Показывать пришедшее сообщение во всплывающем окне сверху</string>
-    <string name="eink_notif">Второй экрана</string>
-    <string name="first_screen">Главный экран</string>
+    <string name="eink_notif">Второй экрана Yotaphone</string>
+    <string name="first_screen">Основные</string>
     <string name="settings_other">Другие</string>
     <string name="show_time">Показывать время и заряд</string>
     <string name="show_time_summ">Показывать время и статус батареи в заголовке на втором экране</string>

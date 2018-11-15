@@ -1,4 +1,4 @@
-package com.zakharchenko.yotavk;
+package com.zakharchenko.yotavk.View;
 
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -39,8 +39,18 @@ import com.vk.sdk.api.VKResponse;
 import com.vk.sdk.api.model.VKApiMessage;
 import com.vk.sdk.api.model.VKApiUser;
 import com.vk.sdk.api.model.VKApiUserFull;
+import com.vk.sdk.api.model.VKList;
 import com.yotadevices.sdk.Epd;
+import com.yotadevices.sdk.EpdIntentCompat;
 import com.yotadevices.sdk.utils.RotationAlgorithm;
+import com.zakharchenko.yotavk.Data.VKData;
+import com.zakharchenko.yotavk.Model.VKDialog;
+import com.zakharchenko.yotavk.MyApplication;
+import com.zakharchenko.yotavk.Presenter.ChatsPresenter;
+import com.zakharchenko.yotavk.Presenter.Presenter;
+import com.zakharchenko.yotavk.R;
+import com.zakharchenko.yotavk.GCM.RegistrationIntentService;
+import com.zakharchenko.yotavk.Utils.Utils;
 
 import java.io.File;
 import java.text.SimpleDateFormat;
@@ -48,7 +58,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-public class ChatsList extends Activity implements PopupMenu.OnMenuItemClickListener {
+public class ChatsList extends Activity implements PopupMenu.OnMenuItemClickListener,ChatsPresenter.Listener {
 
     public final String TAG="ChatList";
 
@@ -105,7 +115,13 @@ public class ChatsList extends Activity implements PopupMenu.OnMenuItemClickList
 
             // Launch a back screen activity
 
-            getApplicationContext().startService(new Intent(getApplicationContext(), BSChatsList.class));
+
+            //TODO: SDK2 getApplicationContext().startService(new Intent(getApplicationContext(), BSChatsList.class));
+            if (Utils.isClass("com.yotadevices.sdk.EpdIntentCompat")) {
+                Intent i = new Intent(getApplicationContext(), ChatsList.class);
+                EpdIntentCompat.addEpdFlags(i, EpdIntentCompat.FLAG_ACTIVITY_START_ON_EPD_SCREEN);
+                getApplicationContext().startActivity(i);
+            }
 
 
 
@@ -127,14 +143,24 @@ public class ChatsList extends Activity implements PopupMenu.OnMenuItemClickList
 
                     }
                 }
-            else onUpdate();
+
         }
     };
 
 
     public static ChatsList Self = null;
     public boolean bPaused = true;
-    static boolean isRunning(){return ((Self!=null) && (Self.bPaused));}
+
+    @Override
+    public void onChanged() {
+         runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+
+                onUpdate();
+            }
+        });
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -146,7 +172,8 @@ public class ChatsList extends Activity implements PopupMenu.OnMenuItemClickList
 
         setContentView(R.layout.activity_chats_list);
 
-        if (Epd.isEpdContext(this)){
+        if (Utils.isYotaphoneSDK() && (Epd.isEpdContext(this))){
+
             ((View )findViewById(R.id.Header).getParent()).setBackgroundColor(Color.BLACK);
 
         }
@@ -156,11 +183,11 @@ public class ChatsList extends Activity implements PopupMenu.OnMenuItemClickList
         boolean sentToken = PreferenceManager.getDefaultSharedPreferences(this).getBoolean("SENT_TOKEN_TO_SERVER", false);
         if (sentToken){
 
-
             onGCMReady();
 
         }
 
+        presenter = new ChatsPresenter(this, MyApplication.dataProvider);
     }
 
     public static void onGCMReady(){
@@ -168,21 +195,16 @@ public class ChatsList extends Activity implements PopupMenu.OnMenuItemClickList
 
     }
 
+    ChatsPresenter presenter;
+
     @Override
     protected void onResume(){
         super.onResume();
-
-        bPaused = false;
-
         Log.d(TAG, "onResume");
 
-        findViewById(R.id.Wait).setVisibility(View.VISIBLE);
-        ((AnimationDrawable)((ImageView) findViewById(R.id.Wait)).getDrawable()).start();
+        bPaused = false;
+        presenter.Attach(this, MyApplication.dataProvider);
 
-        IntentFilter ifil = new IntentFilter(MyApplication.VKRECORDSCHANGED_BROADCAST);
-        ifil.addAction(MyApplication.VKUSERSCHANGED_BROADCAST);
-        ifil.addAction(MyApplication.VKREADCHANGED_BROADCAST);
-        registerReceiver(bReceiver, ifil);
 
         IntentFilter ifil2 = new IntentFilter("yotaphone.intent.action.IS_BS_SUPPORTED");
         ifil2.addAction("yotaphone.intent.action.P2B");
@@ -196,20 +218,34 @@ public class ChatsList extends Activity implements PopupMenu.OnMenuItemClickList
             mNotificationManager.cancelAll();
 
         }
-            MyApplication.GetMessages(new VKRequest.VKRequestListener() {
-                @Override
-                public void onComplete(VKResponse response) {
 
-                    Intent intent = new Intent(MyApplication.VKRECORDSCHANGED_BROADCAST);
-                    MyApplication.SetIntentExtras(intent);
-                    sendBroadcast(intent);
+        onUpdate();
+    }
 
-                    onUpdate();
-                }
-            });
+    @Override
+    public void showLoaded(final boolean bLoaded) {
 
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
 
 
+
+            if(bLoaded)
+
+            {
+                ((AnimationDrawable) ((ImageView) findViewById(R.id.Wait)).getDrawable()).start();
+                findViewById(R.id.Wait).setVisibility(View.VISIBLE);
+            }
+
+            else
+
+            {
+                ((AnimationDrawable) ((ImageView) findViewById(R.id.Wait)).getDrawable()).stop();
+                findViewById(R.id.Wait).setVisibility(View.GONE);
+            }
+        }
+      });
     }
 
 
@@ -217,27 +253,35 @@ public class ChatsList extends Activity implements PopupMenu.OnMenuItemClickList
     protected void onPause(){
         super.onPause();
 
-        ((AnimationDrawable)((ImageView) findViewById(R.id.Wait)).getDrawable()).stop();
 
         bPaused = true;
 
+        presenter.Destroy();
+
+
         Log.d(TAG, "onPause");
 
-        unregisterReceiver(bReceiver);
         unregisterReceiver(bP2BReceiver);
     }
 
-    public class MyAdapter extends ArrayAdapter<MyApplication.VKDialog>{
 
-        public MyAdapter(Context context, int textViewResourceId, List<MyApplication.VKDialog> dlgs) {
+
+    public class MyAdapter extends ArrayAdapter<VKDialog>{
+
+        public MyAdapter(Context context, int textViewResourceId, List<VKDialog> dlgs) {
             super(context, textViewResourceId,dlgs);
         }
 
-        public void refresh(List<MyApplication.VKDialog> dlgs) {
+       /* public void refresh(List<VKDialog> dlgs) {
             clear();
             addAll(dlgs);
             notifyDataSetChanged();
-        }
+        }*/
+       public void refresh(List<VKDialog> dlgs){
+           clear();
+           addAll(dlgs);
+           notifyDataSetChanged();
+       }
 
         @Override
         public View getView(int position, View convertView, ViewGroup parent) {
@@ -246,7 +290,7 @@ public class ChatsList extends Activity implements PopupMenu.OnMenuItemClickList
 
         public View getCustomView(int position, View convertView, ViewGroup parent) {
 
-            MyApplication.VKDialog dlg = this.getItem(position);
+            VKDialog dlg = this.getItem(position);
 
             LayoutInflater inflater = ((Activity)getContext()).getLayoutInflater();
             final View row ;
@@ -282,12 +326,19 @@ public class ChatsList extends Activity implements PopupMenu.OnMenuItemClickList
                 }
                 else{
 
-                VKApiUser user =  ((MyApplication)getApplication()).getUserById(dlg.uid);
+                VKApiUser user =  presenter.GetUser(dlg.uid);
 
                 if (user!=null) {
                     try {
-                        if (new File(MyApplication.CacheDir, "img_cache/img_user_" + user.getId() + ".jpg").exists())
-                            ((ImageView) row.findViewById(R.id.imageView)).setImageBitmap(ImageUtil.decodeBitmapScaledSquare(MyApplication.CacheDir + "img_cache/img_user_" + user.getId() + ".jpg", 100));
+                        if (new File(MyApplication.CacheDir, "img_cache/img_user_" + user.id + ".jpg").exists())
+                            ((ImageView) row.findViewById(R.id.imageView)).setImageBitmap(Utils.decodeBitmapScaledSquare(MyApplication.CacheDir + "img_cache/img_user_" + user.id + ".jpg", 100));
+                        else {
+
+                            if (user.id<0)
+                                ((ImageView) row.findViewById(R.id.imageView)).setImageDrawable(getContext().getResources().getDrawable(R.drawable.group));
+
+
+                        }
                     }
                     catch (Exception e){}
 
@@ -297,7 +348,9 @@ public class ChatsList extends Activity implements PopupMenu.OnMenuItemClickList
 
                     ((TextView) row.findViewById(R.id.Header)).setText("User #" + dlg.uid);
                     // adding user to friends
-                }}
+                 }
+                }
+
                 if (dlg.message!=null) {
                     String s = dlg.message.body;
                     ((TextView) row.findViewById(R.id.Text)).setText(s.substring(0, Math.min(50, s.length())));
@@ -305,15 +358,15 @@ public class ChatsList extends Activity implements PopupMenu.OnMenuItemClickList
                 else
                     row.findViewById(R.id.Text).setVisibility(View.GONE);
 
-
                 row.setTag(dlg);
+
 
                 row.setOnClickListener(new View.OnClickListener() {
 
                     @Override
                     public void onClick(View v) {
                         //Dirty hack
-                        startConversation(((MyApplication.VKDialog)v.getTag()));
+                        startConversation(((VKDialog)v.getTag()));
                             /*
                             Intent intent = new Intent(getContext(), ConversationActivity.class);
                             if(((DialogWrapper)v.getTag()).chatId>0)
@@ -351,35 +404,25 @@ public class ChatsList extends Activity implements PopupMenu.OnMenuItemClickList
             mNotificationManager.cancelAll();
         }
 
-        if (!bChatMode)
-        {
+        if (!bChatMode) {
 
-            runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
+            try {
 
+                List<VKDialog> dialogs = presenter.GetDialogs();
+                if (dialogs != null) {
 
-                    MyApplication.lock.lock();
-                    try {
-
-                        if (MyApplication.dialogs != null) {
-
-                            findViewById(R.id.Wait).setVisibility(View.GONE);
-                            ((AnimationDrawable)((ImageView) findViewById(R.id.Wait)).getDrawable()).stop();
-
-                            if (((ListView) findViewById(R.id.listView)).getAdapter()==null)
-                             ((ListView) findViewById(R.id.listView)).setAdapter(new MyAdapter(ChatsList.this, R.layout.dialog, MyApplication.dialogs_ex()));
-                            else
-                                ((MyAdapter)((ListView) findViewById(R.id.listView)).getAdapter()).refresh(MyApplication.dialogs_ex());
-
-                        }
-                    } finally {
-                        MyApplication.lock.unlock();
+                    if (((ListView) findViewById(R.id.listView)).getAdapter() == null)
+                        ((ListView) findViewById(R.id.listView)).setAdapter(new MyAdapter(ChatsList.this, R.layout.dialog, dialogs));
+                    else {
+                        ((MyAdapter) ((ListView) findViewById(R.id.listView)).getAdapter()).refresh(dialogs);
+                        //findViewById(R.id.listView).invalidate();
                     }
-                }
-            });
 
+                }
+            } finally {
+            }
         }
+
 
 
 
@@ -388,17 +431,26 @@ public class ChatsList extends Activity implements PopupMenu.OnMenuItemClickList
     final int SELECT_COLOR = Color.rgb(168,168,168);
     ArrayList<Integer> ChatIDs = new ArrayList<>();
 
-    protected void startConversation(MyApplication.VKDialog dlg){
+    @Override
+    public void openDialog(int uid) {
+        Intent i = new Intent();
+        i.setClass(this, MessagesList.class);
+        i.putExtra("ID", uid);
+        startActivity(i);
+    }
+
+    protected void startConversation(VKDialog dlg){
 
         if (bChatMode){
             Log.d(TAG, "Select participant: " + dlg.uid);
 
 
-            if (dlg.chat_id==0) {
+            if ((dlg.chat_id==0) && (dlg.uid>0))
+            {
                 ListView list = ((ListView) findViewById(R.id.listView));
                 int q=0;
                 for (;q<list.getCount();q++)
-                    if (((MyApplication.VKDialog)list.getChildAt(q).getTag()).uid==dlg.uid)
+                    if (((VKDialog)list.getChildAt(q).getTag()).uid==dlg.uid)
                         break;
 
                 if (q<list.getCount()){
@@ -424,12 +476,9 @@ public class ChatsList extends Activity implements PopupMenu.OnMenuItemClickList
         }
         else {
             Log.d(TAG, "Start conversation: " + dlg.uid);
+            openDialog(dlg.uid);
 
 
-            Intent i = new Intent();
-            i.setClass(this, MessagesList.class);
-            i.putExtra("ID", dlg.uid);
-            startActivity(i);
         }
     }
 
@@ -452,50 +501,18 @@ public class ChatsList extends Activity implements PopupMenu.OnMenuItemClickList
 
         if (v.getId()==R.id.buttonOK){
 
+            bChatMode = false;
 
             int array[] = new int[ChatIDs.size()];
             for (int i=0; i<ChatIDs.size();i++) array[i]=ChatIDs.get(i);
 
-            MyApplication.CreateChat(createChatName, array, new VKRequest.VKRequestListener() {
-                @Override
-                public void onComplete(VKResponse response) {
-                    super.onComplete(response);
-
-                    try {
-                        final int ChatID = response.json.getInt("response");
-
-                        MyApplication.GetMessages(new VKRequest.VKRequestListener() {
-                            @Override
-                            public void onComplete(VKResponse response) {
-                                super.onComplete(response);
-
-                                runOnUiThread(new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        startConversation(MyApplication.getDialogById(MyApplication.CHAT_UID_OFFSET + ChatID));
-                                    }
-                                });
-
-                            }
-                        });
-                    } catch (Exception e) {
-                    }
-                }
-
-                @Override
-                public void onError(VKError error) {
-                    super.onError(error);
-
-                    Log.i(TAG, "Error chat " + error.toString());
-                }
-            });
-
-
+            presenter.CreateChat(array,createChatName);
         }
 
         CreateChatMode(false);
-
     }
+
+
 
     public boolean bChatMode = false;
 
@@ -563,23 +580,7 @@ public class ChatsList extends Activity implements PopupMenu.OnMenuItemClickList
                     ChatDialog=null;
                 }
                 CreateChatMode(false);
-
-                findViewById(R.id.Wait).setVisibility(View.VISIBLE);
-                ((AnimationDrawable)((ImageView) findViewById(R.id.Wait)).getDrawable()).start();
-
-                MyApplication.GetMessages(new VKRequest.VKRequestListener() {
-                    @Override
-                    public void onComplete(VKResponse response) {
-                        super.onComplete(response);
-
-                        Intent intent = new Intent(MyApplication.VKRECORDSCHANGED_BROADCAST);
-                        MyApplication.SetIntentExtras(intent);
-                        sendBroadcast(intent);
-
-                        onUpdate();
-                    }
-                });
-                MyApplication.GetFriends(((MyApplication)getApplication()).defListener);
+                presenter.Refresh();
 
                 return true;
             case R.id.menu_settings:
@@ -608,5 +609,6 @@ public class ChatsList extends Activity implements PopupMenu.OnMenuItemClickList
 
         super.onDestroy();
 
+        presenter = null;
     }
 }

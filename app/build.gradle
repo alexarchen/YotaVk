@@ -2,31 +2,39 @@ apply plugin: 'com.android.application'
 //apply plugin: 'com.google.gms.google-services'
 
 android {
-
-
+    signingConfigs {
+        config {
+        }
+    }
     lintOptions {
         checkReleaseBuilds false
         // Or, if you prefer, you can continue to check for errors in release builds,
         // but continue the build even when errors are found:
         abortOnError false
     }
-
     compileSdkVersion 'YotaDevices:YotaPhone2 SDK Add-On:21'
     buildToolsVersion "23.0.2"
     defaultConfig {
         applicationId "com.zakharchenko.yotavk"
-        minSdkVersion 21
-        targetSdkVersion 21
-        versionCode 11
-        versionName '2.03'
+        minSdkVersion 23
+        targetSdkVersion 26
+        versionCode 13
+        versionName '2.05'
     }
     buildTypes {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.config
+        }
+        debug {
         }
     }
     productFlavors {
+        prod {
+        }
+        mock {
+        }
     }
 }
 
@@ -37,6 +45,7 @@ dependencies {
     compile 'com.vk:androidsdk:1.6.5'
     compile 'com.android.support:support-v4:21.0.3'
     provided 'com.yotadevices.libs.public:sdk:3.7.+'
+    androidTestCompile 'junit:junit:4.12'
 }
 
 apply plugin: 'com.google.gms.google-services'

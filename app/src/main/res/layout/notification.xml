@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<com.zakharchenko.yotavk.InversableLinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<com.zakharchenko.yotavk.View.InversableLinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
 
     android:orientation="vertical" android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -68,4 +68,4 @@
             android:layout_marginRight="10dp" />
 
     </RelativeLayout>
-</com.zakharchenko.yotavk.InversableLinearLayout>
+</com.zakharchenko.yotavk.View.InversableLinearLayout>
