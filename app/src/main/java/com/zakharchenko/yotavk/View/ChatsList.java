@@ -294,7 +294,8 @@ public class ChatsList extends Activity implements PopupMenu.OnMenuItemClickList
 
             LayoutInflater inflater = ((Activity)getContext()).getLayoutInflater();
             final View row ;
-            if (Epd.isEpdContext(getContext()))
+
+            if (Utils.isYotaphoneSDK() && (Epd.isEpdContext(getContext())))
                 row = inflater.inflate(R.layout.dialog_bs, parent, false);
             else
                 row = inflater.inflate(R.layout.dialog, parent, false);

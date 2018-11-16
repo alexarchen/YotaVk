@@ -84,7 +84,7 @@ public class MyGcmListenerService extends GcmListenerService {
         if ((suid!=null) && (data.getString("type")!=null) && (data.getString("type").equals("msg"))){
 
 
-            MyApplication.dataProvider.getDialogByIdWithMessages(Integer.decode(suid));
+            MyApplication.dataProvider.notifyNewMessage(Integer.decode(suid));
             //MyApplication.dataProvider.RefreshDialogs(); //.AddNewMessage(data.getInt("uid"),data.getInt("msg_id"),data.getString("text"));
             //MyApplication.NotifySystem(true);
         }

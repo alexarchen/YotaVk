@@ -95,6 +95,9 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Delayed;
 import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
@@ -296,7 +299,7 @@ public class MyApplication extends Application implements NotificationPresenter.
 
 
    NotificationPresenter presenter;
-
+   ScheduledFuture stopNotifTask;
    public void NotifySystem(boolean bNewMsg){
 
         Context context = AppContext;
@@ -421,12 +424,16 @@ public class MyApplication extends Application implements NotificationPresenter.
                             Notification notify = mBuilder.build();
                             mNotificationManager.notify(2, notify);
 
-                            new Handler().postDelayed(new Runnable() {
+
+                            if (stopNotifTask!=null)
+                                stopNotifTask.cancel(true);
+
+                            stopNotifTask = Executors.newSingleThreadScheduledExecutor().schedule(new Runnable() {
                                 @Override
                                 public void run() {
                                     mNotificationManager.cancel(2);
                                 }
-                            }, 4000);
+                            }, 4000, TimeUnit.MILLISECONDS);
 
 
                             if ((Utils.isYotaphoneSDK3())

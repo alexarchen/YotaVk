@@ -2,10 +2,6 @@ apply plugin: 'com.android.application'
 //apply plugin: 'com.google.gms.google-services'
 
 android {
-    signingConfigs {
-        config {
-        }
-    }
     lintOptions {
         checkReleaseBuilds false
         // Or, if you prefer, you can continue to check for errors in release builds,
@@ -18,8 +14,8 @@ android {
         applicationId "com.zakharchenko.yotavk"
         minSdkVersion 23
         targetSdkVersion 26
-        versionCode 13
-        versionName '2.05'
+        versionCode 14
+        versionName '2.06'
     }
     buildTypes {
         release {

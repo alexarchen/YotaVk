@@ -244,15 +244,10 @@ public class VKData {
 
     public void RefreshDialogs(){
 
-        RefreshDialogs(new VKRequest.VKRequestListener() {
-            @Override
-            public void onComplete(VKResponse response) {
-                super.onComplete(response);
+        Log.d("DIALOGS","Gettings dialogs");
 
-                DetectNewMessage();
-
-            }
-        });
+        final VKParameters req = VKParameters.from(VKApiConst.COUNT, ""+ MAX_DIALOGS);
+        AddCallRequest(VKApi.messages().getDialogs(req).methodName, req, _DialogsRefreshListener);
     }
 
 
@@ -371,7 +366,8 @@ public class VKData {
         }
 
         public void AddListener(VKRequestListener listener){
-            listeners.add(listener);
+            if (!listeners.contains(listener))
+             listeners.add(listener);
         }
 
     }
@@ -421,7 +417,7 @@ public class VKData {
             }
             else {
                 Log.d("VKData","Found Request: "+resreq.methodName);
-                resreq.listeners.add(listener);
+                resreq.AddListener(listener);
             }
         }
         finally {
@@ -539,6 +535,88 @@ public class VKData {
     /* Reloads users information from server for those users that
      were loaded earlier than CACHE_RELOAD_TIME ms ago
       */
+
+    VKRequest.VKRequestListener _UsersRefreshListener = new VKRequest.VKRequestListener() {
+        @Override
+        public void onComplete(VKResponse response) {
+            super.onComplete(response);
+            try {
+                Log.d("USERS", response.json.toString());
+
+                JSONArray arr = response.json.getJSONArray("response");
+                for (int i = 0; i < arr.length(); i++) {
+                    String user_photo_100 = "";
+                    VKApiUserFullCache _user = new VKApiUserFullCache(arr.getJSONObject(i));
+                    lock.lock();
+                    try {
+                        userCache.add(_user);
+                        user_photo_100 = _user.photo_100;
+                    } catch (Exception e) {
+
+                    } finally {
+                        lock.unlock();
+                    }
+
+                    if (user_photo_100.length() > 0) {
+                        Log.d("USER", "Loading photo " + user_photo_100 + "...");
+                        LoadUserPhoto(_user.id, user_photo_100);
+                    }
+
+                }
+            } catch (Exception e) {
+            }
+
+            SaveCache();
+            NotifySystem(VKApiUserFull.class, 0);
+
+        }
+    };
+
+    VKRequest.VKRequestListener _GroupsRefreshListener = new VKRequest.VKRequestListener() {
+        @Override
+        public void onComplete(VKResponse response) {
+            super.onComplete(response);
+            try {
+                Log.d("GROUPS", response.json.toString());
+
+                JSONArray arr = response.json.getJSONArray("response");
+                for (int i = 0; i < arr.length(); i++) {
+                    String user_photo_100 = "";
+                    VKApiUserFullCache _user = new VKApiUserFullCache(arr.getJSONObject(i));
+                    _user.id *= -1; // for group id is negative
+                    lock.lock();
+                    try {
+                        VKApiUserFull user = null;
+                        user = getUserById(_user.id, false);
+                        if (user != null) {
+                            user.parse(arr.getJSONObject(i));
+                            user.id *= -1;
+                            user_photo_100 = user.photo_100;
+                            user.first_name = arr.getJSONObject(i).optString("name");
+                            if (user.getClass() == VKApiUserFullCache.class) {
+                                ((VKApiUserFullCache) user).LastLoaded = System.currentTimeMillis();
+                            }
+                        }
+                    } catch (Exception e) {
+
+                    } finally {
+                        lock.unlock();
+                    }
+
+                    SaveCache();
+
+                    if (user_photo_100.length() > 0) {
+                        Log.d("USER", "Loading photo " + user_photo_100 + "...");
+                        LoadUserPhoto(_user.id, user_photo_100);
+                    }
+
+                    NotifySystem(VKApiUserFull.class, _user.id);
+                }
+            } catch (Exception e) {
+            }
+        }
+    };
+
     void RefreshUserCache(){
 
         final StringBuilder group_ids = new StringBuilder();
@@ -565,122 +643,11 @@ public class VKData {
         if (user_ids.toString().length()>0) {
             final VKParameters req = VKParameters.from(VKApiConst.USER_IDS, "" + user_ids.toString(), VKApiConst.FIELDS, "photo_id,photo_100,photo_50,is_friend,last_seen");
 
-            AddCallRequest(VKApi.users().get(req).methodName, req, new VKRequest.VKRequestListener() {
-                @Override
-                public void onError(VKError error) {
-                    Log.d("USERS", "Error loading users: " + error.toString());
-                    if (error.apiError.errorCode == 6) {
-                        final VKRequest.VKRequestListener listener = this;
-                        new Handler().postDelayed(new Runnable() {
-                            @Override
-                            public void run() {
-                                VKApi.users().get(req).executeWithListener(listener);
-                            }
-                        }, REQUEST_DELAY);
-                    }
-                }
-
-                @Override
-                public void onComplete(VKResponse response) {
-                    super.onComplete(response);
-                    try {
-                        Log.d("USERS", response.json.toString());
-
-                        JSONArray arr = response.json.getJSONArray("response");
-                        for (int i = 0; i < arr.length(); i++) {
-                            String user_photo_100 = "";
-                            VKApiUserFullCache _user = new VKApiUserFullCache(arr.getJSONObject(i));
-                            lock.lock();
-                            try {
-                                userCache.add(_user);
-                                //VKApiUserFull user = null;
-                                //user = getUserById(_user.id, false);
-                                //if (user != null) {
-                                   // user.parse(arr.getJSONObject(i));
-                                    user_photo_100 = _user.photo_100;
-//                                    user.first_name = response.json.getJSONArray("response").getJSONObject(0).optString("name");
-                                //}
-                            } catch (Exception e) {
-
-                            } finally {
-                                lock.unlock();
-                            }
-
-                            if (user_photo_100.length() > 0) {
-                                Log.d("USER", "Loading photo " + user_photo_100 + "...");
-                                LoadUserPhoto(_user.id, user_photo_100);
-                            }
-
-                        }
-                    } catch (Exception e) {
-                    }
-
-                    SaveCache();
-                    NotifySystem(VKApiUserFull.class, 0);
-
-                }
-            });
+            AddCallRequest(VKApi.users().get(req).methodName, req, _UsersRefreshListener);
         }
         if (group_ids.toString().length()>0) {
             final VKParameters req = VKParameters.from("group_ids", "" + group_ids.toString(), VKApiConst.FIELDS, "photo_id,photo_100,photo_50");
-            AddCallRequest(VKApi.groups().getById(req).methodName, req, new VKRequest.VKRequestListener() {
-                @Override
-                public void onError(VKError error) {
-                    Log.d("GROUPS", "Error loading groups: " + error.toString());
-                    if (error.apiError.errorCode == 6) {
-                        final VKRequest.VKRequestListener listener = this;
-                        new Handler().postDelayed(new Runnable() {
-                            @Override
-                            public void run() {
-                                VKApi.groups().getById(req).executeWithListener(listener);
-                            }
-                        }, REQUEST_DELAY);
-                    }
-                }
-
-                @Override
-                public void onComplete(VKResponse response) {
-                    super.onComplete(response);
-                    try {
-                        Log.d("GROUPS", response.json.toString());
-
-                        JSONArray arr = response.json.getJSONArray("response");
-                        for (int i = 0; i < arr.length(); i++) {
-                            String user_photo_100 = "";
-                            VKApiUserFullCache _user = new VKApiUserFullCache(arr.getJSONObject(i));
-                            _user.id *= -1; // for group id is negative
-                            lock.lock();
-                            try {
-                                VKApiUserFull user = null;
-                                user = getUserById(_user.id, false);
-                                if (user != null) {
-                                    user.parse(arr.getJSONObject(i));
-                                    user.id *= -1;
-                                    user_photo_100 = user.photo_100;
-                                    user.first_name = arr.getJSONObject(i).optString("name");
-                                    if (user.getClass() == VKApiUserFullCache.class) {
-                                        ((VKApiUserFullCache) user).LastLoaded = System.currentTimeMillis();
-                                    }
-                                }
-                            } catch (Exception e) {
-
-                            } finally {
-                                lock.unlock();
-                            }
-
-                            SaveCache();
-
-                            if (user_photo_100.length() > 0) {
-                                Log.d("USER", "Loading photo " + user_photo_100 + "...");
-                                LoadUserPhoto(_user.id, user_photo_100);
-                            }
-
-                            NotifySystem(VKApiUserFull.class, _user.id);
-                        }
-                    } catch (Exception e) {
-                    }
-                }
-            });
+            AddCallRequest(VKApi.groups().getById(req).methodName, req, _GroupsRefreshListener);
 
         }
     }
@@ -753,14 +720,14 @@ public class VKData {
         VKDialog dlg = null;
         lock.lock();
         try {
-            if (dialogs != null) {
+
 
                 for (VKDialog d:dialogs){
                     if (d.uid==uid)
                     {dlg = d; break;}
                 }
 
-            }
+
         }
         finally {
             lock.unlock();
@@ -847,7 +814,9 @@ public class VKData {
                             }
 
                             Collections.sort(dialogs);
-                            DetectNewMessage();
+                            if (HasNewMessageNotifiction)
+                             DetectNewMessage();
+                            HasNewMessageNotifiction = false;
                         }
                         catch(Exception e){
 
@@ -876,99 +845,57 @@ public class VKData {
 
     final static int MAX_DIALOGS = 200; // Maximum number of last dialogs shown in app
 
-    public static boolean bDoGetMessages = false;
+    //public static boolean bDoGetMessages = false;
 
     int LastReceivedMessageId=0;
 
-    /* Refresh All Dialogs cache of the current user async*/
-    void RefreshDialogs(final VKRequest.VKRequestListener listener){
 
-        Log.d("DIALOGS","Gettings dialogs");
+    VKRequest.VKRequestListener _DialogsRefreshListener = new VKRequest.VKRequestListener() {
+        @Override
+        public void onComplete(VKResponse response) {
+            //Do complete stuff
+            Log.d("DIALOGS", response.json.toString());
 
-        bDoGetMessages = true;
-
-
-        final VKParameters req = VKParameters.from(VKApiConst.COUNT, ""+ MAX_DIALOGS);
-        AddCallRequest(VKApi.messages().getDialogs(req).methodName, req, new VKRequest.VKRequestListener() {
-            @Override
-            public void onComplete(VKResponse response) {
-                //Do complete stuff
-                Log.d("DIALOGS", response.json.toString());
-
-                int nUnread = 0;
-                lock.lock();
-                try {
+            int nUnread = 0;
+            lock.lock();
+            try {
 
 
-                    VKList<VKDialog> _dialogs = new VKList<VKDialog>(response.json.optJSONObject("response").optJSONArray("items"), VKDialog.class);
-                    // add message information
-                    for (VKDialog dlg : _dialogs) {
+                VKList<VKDialog> _dialogs = new VKList<VKDialog>(response.json.optJSONObject("response").optJSONArray("items"), VKDialog.class);
+                // add message information
+                for (VKDialog dlg : _dialogs) {
 
-                        VKDialog olddlg = getDialogById(dlg.uid);
-                        // adding users to cache
-                        getUserById(dlg.uid, true);
+                    VKDialog olddlg = getDialogById(dlg.uid);
+                    // adding users to cache
+                    getUserById(dlg.uid, true);
 
-                        if ((olddlg != null) && (olddlg.Messages != null)) {
-                            dlg.Messages = olddlg.Messages;
-                        }
-
-
-                        nUnread += dlg.unread;
+                    if ((olddlg != null) && (olddlg.Messages != null)) {
+                        dlg.Messages = olddlg.Messages;
                     }
 
-                    dialogs = _dialogs;
 
-
-                    DetectNewMessage();
-
-                } finally {
-
-                    lock.unlock();
+                    nUnread += dlg.unread;
                 }
 
-
-                NotifySystem(VKDialog.class, 0);
-
-                RefreshUserCache();
+                dialogs = _dialogs;
 
 
-                bDoGetMessages = false;
+                DetectNewMessage();
 
-                if (listener != null)
-                    listener.onComplete(null);
+            } finally {
 
+                lock.unlock();
             }
 
-            @Override
-            public void onError(VKError error) {
-//Do error stuff
+
+            NotifySystem(VKDialog.class, 0);
+
+            RefreshUserCache();
 
 
-                Log.d("DIALOGS", "Error loading dialogs: " + error.toString());
-                if (error.apiError.errorCode == 6) {
-                    final VKRequest.VKRequestListener listener = this;
-                    new Handler().postDelayed(new Runnable() {
-                        @Override
-                        public void run() {
-                            VKApi.messages().getDialogs(req).executeWithListener(listener);
-                        }
-                    }, REQUEST_DELAY);
-                } else
-                    bDoGetMessages = false;
+        }
 
-
-            }
-
-            @Override
-            public void attemptFailed(VKRequest request, int attemptNumber, int totalAttempts) {
-                //I don't really believe in progress
-                bDoGetMessages = false;
-
-            }
-        });
-
-    }
-
+    };
 
     public void SendMessage(int uid,String text) {
         SendMessage(uid, text, null);
@@ -1313,6 +1240,13 @@ public class VKData {
     public static String VKUSERSCHANGED_BROADCAST="com.zakharchenko.yotavk.VKUSERSCHANGED_BROADCAST";
 
 
+    boolean HasNewMessageNotifiction = false;
+    public void notifyNewMessage(int uid){
+
+        HasNewMessageNotifiction = true;
+        getDialogByIdWithMessages(uid);
+        // DetectNewmMssage() will be called after information is received from server;
+    }
 
     public void init(){
 

@@ -71,6 +71,7 @@ import com.zakharchenko.yotavk.Presenter.ChatsPresenter;
 import com.zakharchenko.yotavk.Presenter.NotificationPresenter;
 import com.zakharchenko.yotavk.Presenter.Presenter;
 
+import com.zakharchenko.yotavk.Presenter.WidgetPresenter;
 import com.zakharchenko.yotavk.R;
 
 import com.zakharchenko.yotavk.Utils.Utils;
@@ -329,7 +330,7 @@ public class BSWidget extends AppWidgetProvider{
       }
 
 
-      ChatsPresenter presenter;
+      WidgetPresenter presenter;
 
       @Override
       public void onCreate() {
@@ -346,7 +347,7 @@ public class BSWidget extends AppWidgetProvider{
 
           registerReceiver(bReceiver, ifil);
 
-          presenter = new ChatsPresenter(this,MyApplication.dataProvider);
+          presenter = new WidgetPresenter(this,MyApplication.dataProvider);
 
 
       }

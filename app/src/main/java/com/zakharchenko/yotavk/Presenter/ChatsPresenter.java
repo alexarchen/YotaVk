@@ -26,7 +26,7 @@ public class ChatsPresenter  extends  Presenter{
     public ChatsPresenter(Listener listener,VKData dataProvider){
         super(listener,dataProvider);
 
-        Refresh();
+       // Refresh();
     }
 
     @Override

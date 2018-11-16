@@ -45,7 +45,9 @@ public class NotificationPresenter extends Presenter {
 
         if (listener!=null) {
             if (s == VKMessage.class) ((Listener) listener).onNotify(true);
-            else ((Listener) listener).onNotify(false);
+            else
+              if ((s!=VKApiUserFull.class) || (data==0))
+                ((Listener) listener).onNotify(false);
         }
 
     }

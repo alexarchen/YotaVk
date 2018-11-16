@@ -439,7 +439,7 @@ public class MessagesList extends Activity implements MessagesPresenter.MessageL
 
 
             final View row;
-            if (!Epd.isEpdContext(getContext()))
+            if (Utils.isYotaphoneSDK() && (!Epd.isEpdContext(getContext())))
                 row = inflater.inflate(msg.out ? R.layout.message_out : R.layout.message_in, parent, false);
             else
                 row = inflater.inflate(msg.out ? R.layout.message_out_bs : R.layout.message_in_bs, parent, false);
@@ -609,7 +609,7 @@ public class MessagesList extends Activity implements MessagesPresenter.MessageL
                 row.findViewById(R.id.Header).setVisibility(View.GONE);
 
 
-            ((TextView )row.findViewById(R.id.Text)).setText(msg.body+"     ");// + "&nbsp;&nbsp;&nbsp;&nbsp;"));
+            ((TextView )row.findViewById(R.id.Text)).setText(msg.body+"\u00A0\u00A0\u00A0\u00A0 \u00A0\u00A0\u00A0");//"     ");// + "&nbsp;&nbsp;&nbsp;&nbsp;"));
             ((TextView) row.findViewById(R.id.Time)).setText(new SimpleDateFormat("HH:mm").format(((long)msg.date)*1000));
 
             row.setTag(msg);
